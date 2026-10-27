@@ -1,50 +1,54 @@
 # iPhone Duo WebGPU Agent Guide
 
-## 先读这些
+## 先读
 
 - 修改 JS、TSL、场景、输入、动画或资源前，完整阅读 `.cursor/rules/iphone-duo-webgpu.mdc`。
-- 产品结构、GLB 节点、折叠角度、Controller 装配和 NDS 路线以 `docs/iPhone_Duo_NDS_PRD.md` 为准；第 17-23、25 节是实现时的关键章节。
-- 用 `docs/PROJECT_PROGRESS.md` 区分已实现与规划内容；PRD 和规则中的推荐目录、GSAP、NDS 模拟器等不代表依赖或模块已经存在。
-- 文档与代码冲突时，以 `package.json`、`vite.config.js` 和当前源码为准，并修正文档假设，不要凭记忆补齐依赖、节点或资源。
+- 产品结构、折叠、装配和屏幕修改读 `docs/iPhone_Duo_NDS_PRD.md` 第 17–22、28 节；展区和灯光读第 29 节。实现与验收状态查 `docs/PROJECT_PROGRESS.md` 的最新追加记录，顶部摘要和早期章节可能滞后；推荐目录和规划依赖不等于已实现。冲突时以源码、`package.json`、`vite.config.js` 为准。
 
-## 命令与工具现状
+## 开发与验证
 
-- 使用 README 约定的 npm 流程：`npm install`、`npm run dev`、`npm run build`、`npm run preview`。仓库同时跟踪两个 lockfile；不要顺手删除或重生成未使用的 `pnpm-lock.yaml`。
-- Vite 8 要求 Node `^20.19.0 || >=22.12.0`。Vite 的 root 是 `src/`，构建输出为根目录 `dist/`，公共目录仍是根目录 `public/`。
-- 当前唯一可执行的代码检查是 `npm run build`；没有 test、lint、format 或 typecheck script，也没有测试框架。
-- `@antfu/eslint-config` 已安装，但 `package.json` 没有 lint script；当前唯一约定的可执行检查仍是 `npm run build`，除非任务明确补充 lint 流程。
-- Three.js WebGPU bundle 目前会触发 Vite 的 500 kB chunk 警告；构建成功时该警告不是失败。
+- 在仓库根目录运行 `npm install`、`npm run dev`；代码基础检查为 `npm run build`，产物用 `npm run preview`。Vite 8 要求 Node `^20.19.0 || >=22.12.0`。
+- 两个锁文件均被跟踪，但当前 `package-lock.json` 缺少 manifest 中的 `@antfu/eslint-config`；不要假定 `npm ci` 可直接使用，也不要顺手删除或重生成另一份锁文件。
+- Vite root 是 `src/`，公共目录是根目录 `public/`，输出到根目录 `dist/`；`.env*` 从仓库根目录读取。构建同时包含首页和 `/nds-test.html`。
+- 开发地址加 `?debug` 才加载 Tweakpane、创建模型检查器和灯光 Helper；`?performance` 启用性能采样。两者生产构建均禁用。
+- 没有 test、lint、format、typecheck script 或测试框架；ESLint / commitlint 配置不代表已接入自动检查。NDS 定向检查：`node scripts/verify-nds-mapping.mjs`（无需 ROM）、`node scripts/verify-nds.mjs "<本地 .nds 路径>"`（真实 WASM / ROM 核心检查）。
+- `scripts/verify-exhibition.mjs` 是历史 Chrome CDP 检查，需要 Chrome 路径、已有临时目录和空闲端口 5183；仍引用默认不创建的 `keyLightHelper` 和已移除的 `cardLabel`，使用前先适配当前对象结构，勿为旧断言回改产品。
+- 构建不覆盖 GPU 编译、声音、手柄或视觉验收；交互 / 视觉修改需在支持 WebGPU 的最新版浏览器检查，并交由用户最终视觉验收。Three.js 主 chunk 超过 500 kB 的警告本身不是构建失败。
 
-## 当前执行流
+## 生命周期与路由
 
-- `src/index.html` 加载 `src/main.js`；`main.js` 检查 `navigator.gpu`，创建 `Experience`，等待 WebGPU、资源和 `World` 初始化，并在 Vite HMR dispose 时销毁实例。
-- `Experience` 是全局生命周期单例。首次构造必须传 Canvas；Class 组件通过 `new Experience()` 取得同一实例。创建全局服务或动画循环时保持该边界。
-- 初始化顺序是 Camera -> Renderer/WebGPU -> `Resources.load()` -> World -> `setAnimationLoop()`。资源完成前不要创建依赖模型的 World 组件。
-- `World` 装配环境、`ModelAdapter`、`ScreenManager`、`CameraDirector`、`IntroDirector`、`NDSPlayer` 与 `InputRouter`；`ScreenManager` 协调模式与 Timeline，显示委托给 `PhoneScreenSurface`、`ControllerDisplay`、`NDSScreenBridge` 与 `NDSGameSurface`。`NDSPlayer` 持有 `NDSRuntime`、音频和隐藏的 DOM 控制（仅保留文件选择器），由 Experience 唯一循环更新。键盘、标准 Gamepad 和 3D 下屏触控已接入；Controller 锁上后 `ControllerFeedback` 就跟随按键，模拟器只在 Playing 接收这组 Action；持久存档仍待实现。
-- NDS Continue 首次按需载入 WASM / ROM，完成后才进入 Playing；Escape、失焦和隐藏暂停并返回 Game Home，下一次 Continue 恢复会话。Replay、取消和销毁必须使未完成的异步启动失效。音频仅在有效用户激活期间自动解锁，其他情况保留独立启用按钮。
-- NDS 映射固定为上屏 `1.4:1`、下屏 `1:1`；4:3 主画面由 `NDSGameSurface` 等比显示，空余区域使用当前帧的整数倍最近邻像素并略微压暗后延展。触控共用纹理矩阵且只响应清晰主画面；Game Home 与 Playing 允许小范围 Orbit，点在上下屏上时不旋转。`public/nds/` 是本地测试资源，已从 Git 和生产构建排除；`/nds-test.html` 保留独立验证入口。
-- `Experience.init()` 在启动渲染循环后调用 `World.start()` 自动播放 Intro。IntroDirector 负责 Folded、Unfold、Screen Wake、Assembly、Game Changer、Hero 与 Ready 编排；Replay、Skip、Continue 收束和销毁必须停止自身、Controller 与屏幕转场 Timeline。`phone`、`attaching`、`game-home`、`playing` 是独立产品模式，不并入 `intro:state`。
-- `CameraDirector` 监听 `intro:state` 驱动 Folded、Assembly、Hero 镜头，并监听 `product:mode` 驱动 Game Home / Playing 的 Hero、Play 镜头；镜头过渡期间关闭 OrbitControls。落位后 Game Home / Playing 以当前镜头为锚，限制方位、极角和距离；Tweakpane 的 Orbit Enabled 仍是自由取景，并可把当前取景写回单组镜头参数。
-- 资源 URL 只在 `src/js/sources.js` 声明，组件通过 `resources.items` 的稳定名称读取。站点公共资源使用根路径，如 `/iphone.glb`。
-- 生命周期由直接父级显式调用 `update`、`resize`、`destroy`。新增监听器、Tweakpane binding、GPU 资源或动画循环时必须接入同一销毁路径。
+- 入口为 `src/index.html` → `src/main.js` → `Experience.init()`。`Experience` 是单例，首次必须传 Canvas，组件用 `new Experience()` 取实例；初始化顺序为 WebGPU → `Resources.load()` → `World` → `preparePresentation()` 预热真实渲染管线 → 唯一 `setAnimationLoop()` → `World.start()` 播放 Intro。预热结束须恢复 Folded 位姿和镜头，避免首帧闪现安装态。
+- `World` 装配并路由组件，直接父级显式调用 `update` / `resize` / `destroy`；监听、Timeline、面板和 GPU / DOM 资源接入同一 HMR 销毁链。NDS 和鼠标伴随笔也使用该循环；`Time.delta` 为秒，传给 NDS 时乘 1000。
+- DOM UI 通过 EventBus 表达意图，`InputRouter` 输出语义 Action，不直接改 Mesh 或模拟器键码；模拟器 API 留在 `src/js/NDS/`，三屏材质 / 可见性由 `ScreenManager` 协调。`intro:state` 与 `product:mode` 独立；Replay / Skip / Continue 收束和销毁须停止 Intro、装配和屏幕转场时间线。
+- Canvas 只占页头下方区域：`Sizes` 观察 Canvas 实际边界，Renderer 用 `setSize(width, height, false)` 只改像素缓冲；射线输入取 Canvas 边界，鼠标伴随笔仍用全页 CSS 坐标，不新增下屏 UV 映射。
 
-## WebGPU 与模型不变量
+## 产品与渲染不变量
 
-- Three.js 渲染类型从 `three/webgpu` 导入，TSL 从 `three/tsl` 导入；保持 `WebGPURenderer`、Node Material/TSL 和 Tweakpane 路线，不默认增加 WebGL、GLSL 或其他 GUI 回退。
-- 当前运行时模型是 `public/iphone.glb`。10 个必需节点名集中在 `ModelAdapter`：`PHONE_ROOT`、`BottomHalf_NO_CAM`、`TopHalf_CAM`、`Hinge`、`CONTROLLER_ASSEMBLY_ROOT`、`Controller_ROOT`、`Controller_Shell`、`Top_Screen_Plane`、`Bottom_Screen_Plane`、`Bottom_Display_Plane`。
-- `ControllerShellMaterial` 为 `Controller_Shell` 生成程序化磨砂塑料，纯 TSL 位于 `src/shaders/controllerPlastic.js`；`ControllerButtonMaterial` 为 ABXY / DPad 生成独立 Physical 清漆塑料并保留 GLB 底色。按键名称集中在 `ModelAdapter`，不把外壳 Lightmap 用于按键；不要为材质外观回退旧模型。
-- `Controller_Shell` 的运行时 GI 使用 `/lightmaps/Controller_Shell_lightmap.exr`。该 2048² Half Float EXR 使用 `TEXCOORD_1` (`uv1`)，因此保持 `flipY = true`、线性色彩空间和 `channel = 1`；PNG 仅作预览。
-- GLB Bind Pose 是 180 度完全展开态；下半屏固定，只旋转代码生成 Pivot 下的上半屏。首次可见前应用约 8 度近闭合态；Unfold 与装配停在 110 度平放，进入 Hero 后开到 120 度并由 `ProductRig.standRoot` 整机立起 30 度（上屏竖直），Game Home / Playing 保持该姿态。
-- Hinge 的 Pivot 和旋转长轴必须从模型局部包围盒推导，不能硬编码世界轴。重新挂接节点时保持世界变换并检查非均匀缩放。
-- Controller 在 GLB 中的相对变换是唯一安装终点并跟随下半屏；整机展示变换只放在外层 `PresentationRoot`。
-- Controller 装配使用 GSAP，Replay 前切到 110 度。当前模型滑轨轴推导为 Z，视觉确认方向为 `-Z`；方向可在 Tweakpane 覆盖。动画结束、Skip 和销毁都必须回到或保留精确安装矩阵。
-- Phone UI 从 Fold 第一帧开始显示；Top Screen 的方向模糊、位移和折痕阴影由产品角度驱动，Screen Wake 只负责展开后的曝光与焦点稳定。
-- Controller 装配期间 `Bottom_Display_Plane` 完全不可见，用户透过镂空看到 `Bottom_Screen_Plane`；Lock 完成后再执行 Phone UI -> Game Home 转场，结束时隐藏手机下屏并激活 Controller UI。
-- 不回 Blender 增加 Pivot、Anchor 或 Camera，也不要迁移、重命名、压缩或替换用户提供的模型资源，除非任务明确要求。
+- 保持 JavaScript ESM、2 空格、单引号、无分号；坐标 / 矩阵 / 四元数 / TSL / 阻尼注释用中文解释约束。渲染类型从 `three/webgpu`、节点从 `three/tsl` 导入；保持 WebGPU / Node Material / Tweakpane 路线，不默认增加 TypeScript、WebGL 或 GLSL 回退。
+- `public/iphone.glb` 的节点和按键名称只在 `ModelAdapter` 集中映射；Pivot、Anchor、Camera 在运行时生成。未经明确要求，不回 Blender 补节点，也不迁移、重命名、压缩或替换用户模型资源。
+- GLB Bind Pose 是 180°，首次可见前折到 8°；Unfold / 装配为 110° 平放，Hero / Game Home / Playing 为 120° 并经 `ProductRig.standRoot` 立起 30°。下半屏固定，铰链 Pivot / 长轴从 Hinge 局部包围盒推导；重新挂接须保留世界变换并检查非均匀缩放，展示变换与折叠计算分离。
+- Controller 跟随下半屏，GLB 相对矩阵是唯一安装终点；装配滑入已校准为 `-Z`，Replay 先回 110°，结束 / Skip / 销毁保留精确安装矩阵。GSAP 用于离散时间线，ABXY / D-Pad 实时反馈用循环中的阻尼弹簧。
+- Phone UI 从 Fold 首帧显示，模糊 / 位移 / 折痕由角度驱动，Screen Wake 不是黑屏点亮。装配期间 `Bottom_Display_Plane` 完全隐藏以露出手机下屏；Lock 后才转场到 Controller UI，结束时隐藏 `Bottom_Screen_Plane`。
+- 主机外壳 EXR Lightmap 必须保留 `uv1` / `channel = 1`、`flipY = true`、`LinearSRGBColorSpace`；PNG 仅预览，按键和展示外壳不共用安装态 Lightmap。换配色只更新已有材质颜色，保留磨砂、清漆和按键底色；Controller 样件共享的 GLB Geometry 由 `ModelAdapter` 释放，展示组件只回收自有资源。
+- HDR / `scene.environment` 已实测否决（与外壳烘焙重复计光）。`Renderer` 管理透射背景与 GTAO 管线；AO 只通过 `builtinAOContext` 影响间接光，不乘最终屏幕颜色，正常输出只做一次色调映射 / 色彩转换。
 
-## 修改约定
+## NDS 与资源陷阱
 
-- 当前源码是 JavaScript ESM，不要自行迁移 TypeScript。JS 保持 2 空格、单引号、无分号。
-- 为坐标系、矩阵、四元数、TSL 节点和阻尼参数补充解释约束的中文注释；不要逐行翻译代码。
-- GSAP 已安装且只用于离散时间线；不要假定 Vue、Pinia、mitt、模拟器或测试工具已安装。新依赖只在当前任务需要时添加。
-- 有交互或视觉变更时，运行 `npm run build` 并说明需要用户在支持 WebGPU 的最新版浏览器中完成视觉验收。
+- 资源 URL 统一在 `src/js/sources.js` 声明，以站点根路径引用，组件用 `resources.items` 稳定名称读取。模拟器 JS / WASM 是本地固定上游产物，升级前读 `public/vendor/pilas-melonds/NOTICE.md`，不要把它当 npm 依赖或自行生成的源码。
+- 首次 Continue 按需加载 WASM / ROM，保持 Game Home 直到首帧就绪且进入遮罩展开完毕才切 Playing；取消、Replay、失焦和销毁必须使迟到 Promise 失效。Escape / 失焦 / 隐藏暂停并释放输入，Continue 恢复同一会话；音频解锁依赖有效用户激活，手柄不能自行解锁，保留独立启用按钮。
+- NDS 上屏映射 `1.4:1`、下屏 `1:1`，4:3 主画面等比显示，余区用同帧整数倍最近邻像素压暗延展。触控复用纹理矩阵且仅响应清晰主画面；上下屏手势让 Orbit 让路。六张封面仅 `game0` 可试玩，持久存档尚未实现。
+- `public/nds/` 被生产构建插件排除，生产 / preview 通过文件选择器加载 ROM；但该目录当前有 ROM 被 Git 跟踪，并非忽略项，发布前须核查许可，保持构建排除。`.env.example` 的 `VITE_NDS_ROM_URL` 当前没有源码读取；实际开发测试地址由 `ndsSources.testRom` 决定，不要假定填环境变量即可换游戏。
+
+## Agent skills
+
+### Issue tracker
+
+规格与任务使用 `.scratch/` 中的本地 Markdown 文件。操作约定见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+使用五个默认分类状态，写入任务的 `Status:` 字段。角色映射见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+单上下文：根目录 `GLOSSARY.md` 与 `docs/adr/`，按需创建。阅读约定见 `docs/agents/domain.md`。
