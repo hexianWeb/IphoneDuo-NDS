@@ -52,7 +52,7 @@ export default class ExhibitSample {
             name: `${name}_Button_Plastic`,
             metalness: 0, roughness: 0.28, clearcoat: 0.85, clearcoatRoughness: 0.12, ior: 1.47,
           })
-          buttonPrint?.applyTo(material, source)
+          buttonPrint?.applyTo(material, source, mesh)
           this.materials.add(material)
           this.buttonMaterials.push({ part: source.part, material })
           return material

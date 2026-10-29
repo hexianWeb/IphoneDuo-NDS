@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu'
-import { modelWorldMatrix, normalView, positionLocal, uniform } from 'three/tsl'
+import { materialReference, modelWorldMatrix, normalView, positionLocal, uniform } from 'three/tsl'
 import { filteredPlasticNoise, plasticSurfaceNormal } from '../../../shaders/controllerPlastic.js'
 import { getButtonFrame } from './ButtonPrint.js'
 
@@ -21,6 +21,22 @@ export default class ControllerButtonMaterial {
     this.uniforms = Object.fromEntries(
       Object.entries(this.params).map(([key, value]) => [key, uniform(value)]),
     )
+    // 同一套表面算法只建一次；每枚按键的中心/尺度从当前材质读取，调参 uniform 仍由主机持有。
+    const coordinate = positionLocal.sub(materialReference('_buttonSurface.center', 'vec3'))
+      .mul(materialReference('_buttonSurface.scale', 'vec3'))
+    const u = this.uniforms
+    const grain = filteredPlasticNoise(coordinate.mul(u.grainFrequency)).toVar()
+    const worldWidth = modelWorldMatrix.element(0).xyz.length().mul(materialReference('_buttonSurface.width', 'float'))
+    const height = grain.mul(u.bumpStrength).div(u.grainFrequency).mul(worldWidth)
+    this.surfaceNodes = {
+      roughnessNode: u.roughness.add(grain.mul(u.roughnessVariation)).clamp(0.08, 1),
+      normalNode: plasticSurfaceNormal(height),
+      clearcoatNode: u.clearcoat,
+      clearcoatRoughnessNode: u.clearcoatRoughness,
+      iorNode: u.ior,
+      // 底层有颗粒，清漆保持平滑几何法线，高光与外壳形成对比。
+      clearcoatNormalNode: normalView,
+    }
     Object.entries(buttons).forEach(([part, button]) => {
       this.originalMaterials.set(button, button.material)
       const original = button.material
@@ -45,11 +61,6 @@ export default class ControllerButtonMaterial {
     }
 
     // 各按键以自身最长边为颗粒尺度基准，局部坐标随按键移动，不受装配位移影响。
-    const coordinate = positionLocal.sub(center).mul(scale.clone().divideScalar(width))
-    const u = this.uniforms
-    const grain = filteredPlasticNoise(coordinate.mul(u.grainFrequency)).toVar()
-    const worldWidth = modelWorldMatrix.element(0).xyz.length().mul(width / scale.x)
-    const height = grain.mul(u.bumpStrength).div(u.grainFrequency).mul(worldWidth)
     const material = new THREE.MeshPhysicalNodeMaterial({
       name: `${button.name}_Coated_Plastic`,
       color: original.color,
@@ -67,14 +78,9 @@ export default class ControllerButtonMaterial {
       clearcoatRoughness: this.params.clearcoatRoughness,
       ior: this.params.ior,
     })
-    material.roughnessNode = u.roughness.add(grain.mul(u.roughnessVariation)).clamp(0.08, 1)
-    material.normalNode = plasticSurfaceNormal(height)
-    material.clearcoatNode = u.clearcoat
-    material.clearcoatRoughnessNode = u.clearcoatRoughness
-    material.iorNode = u.ior
-    // 底层塑料有微颗粒，清漆层保持平滑几何法线，使高光干净且与外壳形成对比。
-    material.clearcoatNormalNode = normalView
-    this.buttonPrint.applyTo(material, { geometry: button.geometry, matrix: button.matrixWorld, part, frame: this.printFrame })
+    material._buttonSurface = { center, scale: scale.clone().divideScalar(width), width: width / scale.x }
+    Object.assign(material, this.surfaceNodes)
+    this.buttonPrint.applyTo(material, { geometry: button.geometry, matrix: button.matrixWorld, part, frame: this.printFrame }, button)
     this.materials.add(material)
     return material
   }
