@@ -157,8 +157,9 @@ export default class ScreenManager {
     const generation = this.gameEntry.generation
     // 主产品初始化已预热 NDS 两屏；按需重编译时也覆盖实际 GTAO/透射渲染通道。
     if (!this.gameMaterialsPrepared) {
-      await this.experience.renderer.warmup()
-      if (!this.gameEntry.destroyed) this.gameMaterialsPrepared = true
+      const prepared = await this.experience.renderer.warmup()
+      if (!prepared || this.gameEntry.destroyed || generation !== this.gameEntry.generation) return false
+      this.gameMaterialsPrepared = true
     }
     // 编译期间取消或 Replay 后，不得重新打开旧启动请求的遮罩。
     if (this.gameEntry.destroyed || generation !== this.gameEntry.generation) return false

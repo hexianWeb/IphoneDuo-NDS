@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu'
 import Experience from '../Experience.js'
+import PipelinePreparation from './PipelinePreparation.js'
 import ScenePipeline from './ScenePipeline.js'
 import ShadowUpdateTracker from './ShadowUpdateTracker.js'
 import TransmissionBackdrop from './TransmissionBackdrop.js'
@@ -34,6 +35,7 @@ export default class Renderer {
     this.pipeline = new ScenePipeline(this.instance, this.scene, this.camera.instance, this.experience.debug)
     this.transmissionBackdrop = new TransmissionBackdrop(this.instance, this.scene, this.camera.instance)
     this.shadowTracker = new ShadowUpdateTracker({ renderer: this.instance, scene: this.scene, camera: this.camera.instance, debug: this.experience.debug })
+    this.preparation = new PipelinePreparation(this.instance)
   }
 
   setExposure(value) {
@@ -67,6 +69,12 @@ export default class Renderer {
   }
 
   update() {
+    // 游戏进入时的兜底预热也复用此流程；唯一循环继续更新输入，但不抢先同步创建 GPU 管线。
+    if (this.preparing) return
+    this.renderFrame()
+  }
+
+  renderFrame() {
     this.instance.info.reset()
     this.shadowTracker.beginFrame()
     const matrixWorldAutoUpdate = this.scene.matrixWorldAutoUpdate
@@ -92,10 +100,13 @@ export default class Renderer {
   async warmup() {
     const stopped = () => this.destroyed || this.experience.destroyed
     if (stopped()) return false
+    if (this.preparing) throw new Error('渲染预热不能并行执行。')
+    this.preparing = true
     const monitor = this.experience.performanceMonitor
     const now = () => monitor ? performance.now() : 0
     const startedAt = now()
-    const timings = { phase: monitor?.phase, compileMs: 0, stabilizationCompileMs: 0 }
+    const timings = { phase: monitor?.phase, compileMs: 0, stabilizationCompileMs: 0,
+      renderSubmitMs: 0, pipelineWaitMs: 0, queueWaitMs: 0, preparationPasses: 0, preparedPipelines: 0, resizeRestarts: 0 }
     try {
       let needsShadowSeed = false
       this.scene.traverseVisible((object) => {
@@ -130,17 +141,26 @@ export default class Renderer {
       finally {
         if (seed) seed.frustumCulled = frustumCulled
       }
-      // Three 的 ShadowNode 同一 camera/frameId 只绘一次；Loading 下不同姿态也必须跨到下一帧。
-      await new Promise(resolve => requestAnimationFrame(resolve))
+      do {
+        // 收集真实离屏/MRT/AO/透明管线，异步并行准备；普通 scene compile 不覆盖这些上下文。
+        const prepared = await this.preparation.run(() => {
+          // 第一轮尚未 ready 的投影物可能被跳过；跨帧重绘必须强制刷新阴影，不能复用空图。
+          this.shadowTracker.invalidated = true
+          this.renderFrame()
+        })
+        if (!prepared.completed || stopped()) return false
+        timings.renderSubmitMs += prepared.renderSubmitMs
+        timings.pipelineWaitMs += prepared.pipelineWaitMs
+        timings.queueWaitMs += prepared.queueWaitMs
+        timings.preparationPasses += prepared.passes
+        timings.preparedPipelines += prepared.pipelines
+        if (!this.resizeRequested) break
+        // 尺寸变更只在队列已完成后应用，避免销毁当前编码/编译引用的透射或深度附件。
+        this.resizeRequested = false
+        this.applySize()
+        timings.resizeRestarts++
+      } while (!stopped())
       if (stopped()) return false
-      // 实际渲染覆盖 MRT、AO context、透射目标及阴影的管线变体；普通 scene compile 不含这些 pass。
-      const renderStartedAt = now()
-      this.update()
-      timings.renderSubmitMs = now() - renderStartedAt
-      const queueStartedAt = now()
-      await this.instance.backend.device.queue.onSubmittedWorkDone()
-      if (stopped()) return false
-      timings.queueWaitMs = now() - queueStartedAt
       timings.totalMs = now() - startedAt
       monitor?.recordWarmup?.(timings)
       return true
@@ -148,6 +168,9 @@ export default class Renderer {
     catch (error) {
       if (stopped()) return false
       throw error
+    }
+    finally {
+      this.preparing = false
     }
   }
 
@@ -167,6 +190,14 @@ export default class Renderer {
   }
 
   resize() {
+    if (this.preparing) {
+      this.resizeRequested = true
+      return
+    }
+    this.applySize()
+  }
+
+  applySize() {
     this.instance.setPixelRatio(this.sizes.pixelRatio)
     // CSS 决定页头下方的可用区域，渲染器仅更新像素缓冲，避免反过来撑大 Flex 画布。
     this.instance.setSize(this.sizes.width, this.sizes.height, false)
@@ -182,6 +213,7 @@ export default class Renderer {
 
   destroy() {
     this.destroyed = true
+    this.preparation?.destroy()
     // 共享 Device 的次级渲染器先释放；只有主渲染器负责最终销毁 Device。
     if (this.pointerOverlay?.ready) this.pointerOverlay.instance.dispose()
     if (!this.instance) return

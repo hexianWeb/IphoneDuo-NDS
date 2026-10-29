@@ -227,8 +227,8 @@ export default class World {
         this.experience.performanceMonitor?.setPhase(`warmup-${mode}`)
         this.screenManager.setMode(mode)
         this.screenManager.update()
-        await renderer.warmup()
-        if (this.experience.destroyed) return
+        const prepared = await renderer.warmup()
+        if (!prepared || this.experience.destroyed) return false
         this.events.emit('experience:scene-progress', { progress: (['phone', 'game-home', 'playing'].indexOf(mode) + 1) / 3 })
       }
       this.screenManager.markGameMaterialsPrepared()
@@ -241,9 +241,9 @@ export default class World {
         // 预热结束精确还原近闭合态与 Folded 镜头，避免首帧短暂露出装配终点。
       }
     }
-    if (this.experience.destroyed) return
+    if (this.experience.destroyed) return false
     this.experience.performanceMonitor?.setPhase('warmup-folded')
-    await renderer.warmup()
+    return renderer.warmup()
   }
 
   resize() {

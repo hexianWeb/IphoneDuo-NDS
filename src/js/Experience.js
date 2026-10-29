@@ -62,8 +62,9 @@ export default class Experience {
     await this.renderer.initPointerOverlay(this.world.stylus)
     if (this.destroyed) return this
     // 在 Loading 内预热真实 Phone / Controller / NDS 与离屏通道，不把首次管线编译留到动画切换。
-    await this.world.preparePresentation()
+    const prepared = await this.world.preparePresentation()
     if (this.destroyed) return this
+    if (!prepared) throw new Error('产品渲染管线准备未完成。')
     this.performanceMonitor?.loaded()
     this.renderer.instance.setAnimationLoop(this.update)
     this.world.start()
