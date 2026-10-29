@@ -9,6 +9,7 @@ export const ndsSources = {
     : null,
 }
 
+// optimized 副本由 scripts/optimize-textures.mjs 统一生成；原始大图留在 public 供重新加工。
 export default [
   {
     name: 'iphoneModel',
@@ -18,7 +19,7 @@ export default [
   {
     name: 'rhyzomePlant',
     type: 'gltfModel',
-    path: '/glb/rhyzome_plant.glb',
+    path: '/optimized/glb/rhyzome_plant.glb',
   },
   {
     name: 'airpodsModel',
@@ -28,12 +29,13 @@ export default [
   {
     name: 'controllerDetailModel',
     type: 'gltfModel',
-    path: '/glb/detail.glb',
+    path: '/optimized/glb/detail.glb',
   },
   {
     name: 'controllerShellLightmap',
     type: 'exrTexture',
-    path: '/lightmaps/Controller_Shell_lightmap.exr',
+    // 原始烘焙保留；派生图在线性浮点域降采样，不经 PNG / sRGB 转换。
+    path: '/optimized/lightmaps/controller-shell-1024.exr',
   },
   {
     name: 'stagePlasticColor',
@@ -53,12 +55,12 @@ export default [
   {
     name: 'phoneHomeTexture',
     type: 'texture',
-    path: '/img/主页面.png',
+    path: '/optimized/img/phone-home.webp',
   },
   {
     name: 'gameHomeReference',
     type: 'texture',
-    path: '/12.png',
+    path: '/optimized/img/game-home-reference.webp',
   },
   {
     name: 'gameCardCover',
@@ -73,6 +75,6 @@ export default [
   ...Array.from({ length: 6 }, (_, index) => ({
     name: `gameCover${index}`,
     type: 'texture',
-    path: `/img/game${index}.png`,
+    path: `/optimized/img/game${index}.webp`,
   })),
 ]

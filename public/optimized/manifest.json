@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "input": "lightmaps/Controller_Shell_lightmap.exr",
+      "output": "optimized/lightmaps/controller-shell-1024.exr",
+      "inputBytes": 50364752,
+      "outputBytes": 1500076,
+      "inputSha256": "9ea3606a1ab415a03217b0c3bec9f033f45eca710da56cf88d10c2a50f7805d4",
+      "outputSha256": "5f5be67d72ec5e3cd94b7680658debe9c5009fcd2f3edca4fc19617885d9b908",
+      "width": 1024,
+      "height": 1024,
+      "encoding": "linear HALF / ZIP, 2x2 area average"
+    },
+    {
+      "input": "glb/detail.glb",
+      "output": "optimized/glb/detail.glb",
+      "inputBytes": 6601060,
+      "outputBytes": 2224784,
+      "inputSha256": "9f13acbd5cf3dd2d649fc237a1e9809286292e44997abe943269c48f4b74fa15",
+      "outputSha256": "95f63c00c315adec5e0ff51116372d70c4249bb4bdccfd145d57f051de45fe5b",
+      "maxTextureSize": 512,
+      "images": [
+        {
+          "name": "Image_0",
+          "width": 256,
+          "height": 256
+        },
+        {
+          "name": "Image_2",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_1",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_0",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_5",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_4",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_3",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_3",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_2",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_0",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "name": "Image_1",
+          "width": 512,
+          "height": 512
+        }
+      ]
+    },
+    {
+      "input": "glb/rhyzome_plant.glb",
+      "output": "optimized/glb/rhyzome_plant.glb",
+      "inputBytes": 1762000,
+      "outputBytes": 655408,
+      "inputSha256": "36c8dc1bbb7c80570a875809e80755257d359e1134024d8d5bf48d2cfcd50c4c",
+      "outputSha256": "6e93bf73c3b5a2095cc79f3f7a98934bd35c31eff3ca2b05485f217b0c1c1c5f",
+      "maxTextureSize": 512,
+      "images": [
+        {
+          "width": 512,
+          "height": 512
+        },
+        {
+          "width": 512,
+          "height": 512
+        }
+      ]
+    },
+    {
+      "input": "img/主页面.png",
+      "output": "optimized/img/phone-home.webp",
+      "inputBytes": 1808780,
+      "outputBytes": 1352316,
+      "inputSha256": "c1e600a0309325ec173eddbe946a5a9127056a05a13d3abdf90495cf5990be46",
+      "outputSha256": "d89d96aa35e70dfa8c54e8510ed314f732f9ffe58aad517aaab30234ce16e77c",
+      "lossless": true
+    },
+    {
+      "input": "12.png",
+      "output": "optimized/img/game-home-reference.webp",
+      "inputBytes": 2834080,
+      "outputBytes": 1416622,
+      "inputSha256": "cb84ba072c4163cd9890a2fc73f1e5140df7f1125fdd51db741d2cb6ea0e3655",
+      "outputSha256": "ec9360201522d2d73e4bbe6a89e327dc0482a76b8e1cf2aa21b1018e43c87436",
+      "lossless": true
+    },
+    {
+      "input": "img/game0.png",
+      "output": "optimized/img/game0.webp",
+      "inputBytes": 2427761,
+      "outputBytes": 140724,
+      "inputSha256": "091e7498ef6112941fbe861952329709681251a71e4fe9d47bed30523f734bb7",
+      "outputSha256": "10311aa1e83cfc6e6d9d3d1154e9bee628e03209f34bec198f95db7501d18311",
+      "lossless": false
+    },
+    {
+      "input": "img/game1.png",
+      "output": "optimized/img/game1.webp",
+      "inputBytes": 433579,
+      "outputBytes": 55460,
+      "inputSha256": "30c668d02ac788ae7eb0b3ae9f2bab051e450ebeb624e968f6cbe279aa41183d",
+      "outputSha256": "d8b39bc964a2aae1d290a2d48b59f1f2310646b95be8a0c9c9cf52e52debb58f",
+      "lossless": false
+    },
+    {
+      "input": "img/game2.png",
+      "output": "optimized/img/game2.webp",
+      "inputBytes": 2042600,
+      "outputBytes": 106796,
+      "inputSha256": "4cb06e15fcf586ec83321e8ff11bff1350992328d8649c6833a3063607ef467f",
+      "outputSha256": "cb20fe68947da40608873399949a6c67c267b7f007d83c325f690e3f67cc97a4",
+      "lossless": false
+    },
+    {
+      "input": "img/game3.png",
+      "output": "optimized/img/game3.webp",
+      "inputBytes": 2140357,
+      "outputBytes": 120774,
+      "inputSha256": "2d7b995d498c8e51d8cfab6c162eb96020b1607d781f162a8083e8ae75d7c725",
+      "outputSha256": "4604b4aa4eebf7d311fcd614eb0fe0f692084196ebfa063dd1744b810e0863a4",
+      "lossless": false
+    },
+    {
+      "input": "img/game4.png",
+      "output": "optimized/img/game4.webp",
+      "inputBytes": 2224830,
+      "outputBytes": 135646,
+      "inputSha256": "803a7c454c6bba44c3952ecf085f6ee659a67f52a4b635a1fddcd97df9021cec",
+      "outputSha256": "a15fae128f1d80c65228ed9f01d08385c47211efc0e081a0ff49abe602a10daf",
+      "lossless": false
+    },
+    {
+      "input": "img/game5.png",
+      "output": "optimized/img/game5.webp",
+      "inputBytes": 2186017,
+      "outputBytes": 121346,
+      "inputSha256": "d74f77963f189e022f3c73f7b0aefbdd6941e5c81ce69161090896ff0bfb9e8a",
+      "outputSha256": "d2393730f4b0bb6f7916776096645aa0546e2ec228937dbe897e45c0c611bff8",
+      "lossless": false
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import { cp } from 'node:fs/promises'
+import { cp, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,10 +15,12 @@ export default defineConfig({
     apply: 'build',
     async writeBundle() {
       const publicRoot = resolve(projectRoot, 'public')
-      // public/nds 仅用于本地验证；其余公共资源维持 Vite 的原样复制行为。
+      const { assets } = JSON.parse(await readFile(resolve(publicRoot, 'optimized/manifest.json'), 'utf8'))
+      const replacedSources = new Set(assets.map(asset => resolve(publicRoot, asset.input)))
+      // 原始大图留在仓库供重生成，生产只复制派生副本；本地 ROM 继续排除。
       await cp(publicRoot, resolve(projectRoot, 'dist'), {
         recursive: true,
-        filter: source => source !== resolve(publicRoot, 'nds'),
+        filter: source => source !== resolve(publicRoot, 'nds') && !replacedSources.has(source),
       })
     },
   }],

@@ -1,4 +1,4 @@
-import { RenderPipeline, Vector2 } from 'three/webgpu'
+import { RedFormat, RenderPipeline, UnsignedByteType, Vector2 } from 'three/webgpu'
 import { builtinAOContext, mrt, normalViewGeometry, pass, rtt, screenUV, vec4 } from 'three/tsl'
 import { ao } from 'three/addons/tsl/display/GTAONode.js'
 import { denoise } from 'three/addons/tsl/display/DenoiseNode.js'
@@ -36,7 +36,9 @@ export default class ScenePipeline {
     // 全分辨率边缘保持降噪用于半分辨率 AO 上采样；尺度为归一化场景的世界单位。
     this.denoiseNode.depthPhi.value = 0.05
     this.denoiseNode.normalPhi.value = 8
-    this.filteredAO = rtt(this.denoiseNode, null, null, { depthBuffer: false })
+    // 遮蔽结果只读取 r 且范围为 0–1；R8 保留全分辨率，避免用 RGBA16F 存四份灰度。
+    this.filteredAO = rtt(this.denoiseNode, null, null, { depthBuffer: false, format: RedFormat, type: UnsignedByteType })
+    this.filteredAO.value.name = 'GTAO_Filtered_R8'
 
     this.scenePass = pass(scene, camera)
     this.scenePass.name = 'Scene with GTAO'

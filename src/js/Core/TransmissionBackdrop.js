@@ -9,7 +9,8 @@ export default class TransmissionBackdrop {
     this.camera = camera
     this.entries = new Set()
     this.size = new THREE.Vector2()
-    this.params = { resolutionScale: 0.75, backside: false, backsideThickness: 0.0125 }
+    // 玻璃只占局部展板；半分辨率配合 mipmap 折射，主画面仍保留原始 HDR 与抗锯齿。
+    this.params = { resolutionScale: 0.5, backside: false, backsideThickness: 0.0125 }
   }
 
   createTarget(name) {
