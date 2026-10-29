@@ -8,6 +8,7 @@ import GameLibraryDisplay from './GameLibraryDisplay.js'
 import InternalComponentsDisplay from './InternalComponentsDisplay.js'
 import PartsDisplay from './PartsDisplay.js'
 import ProductPlinth from './ProductPlinth.js'
+import { labelAssetKeys, themeLabelVariantKeys } from './exhibitLabelLayout.js'
 
 export default class Exhibition {
   constructor({ metrics, stage, sources, plantGltf, onLayout }) {
@@ -47,15 +48,20 @@ export default class Exhibition {
     }
     this.group = new THREE.Group()
     this.group.name = 'Exhibition'
+    this.labelTextures = Object.fromEntries(labelAssetKeys
+      .map(key => [key, experience.resources.items[`${key}LabelTexture`]]))
     this.plinth = new ProductPlinth({ debug: this.debug })
     this.group.add(this.plinth.group)
-    this.partsDisplay = new PartsDisplay({ sources, debug: this.debug, transmissionBackdrop: experience.renderer.transmissionBackdrop })
-    this.colorDock = new ColorDock({ sources, debug: this.debug, events: experience.events })
+    this.partsDisplay = new PartsDisplay({ sources, debug: this.debug, transmissionBackdrop: experience.renderer.transmissionBackdrop,
+      labelTexture: this.labelTextures.parts })
+    this.colorDock = new ColorDock({ sources, debug: this.debug, events: experience.events,
+      labelTextures: themeLabelVariantKeys.map(key => this.labelTextures[key]) })
     this.parts = this.partsDisplay.group
     this.dock = this.colorDock.group
     this.group.add(this.parts, this.dock)
     this.props = new ExhibitProps({
       coverTexture: experience.resources.items.gameCardCover,
+      labelTexture: this.labelTextures.plaque,
       debug: this.debug,
       onLayout: () => this.notifyLayout(),
     })
@@ -67,11 +73,13 @@ export default class Exhibition {
     })
     this.internalComponents = new InternalComponentsDisplay({
       gltf: experience.resources.items.controllerDetailModel,
+      labelTextures: { legend: this.labelTextures.internalLegend, names: this.labelTextures.internalNames },
       debug: this.debug,
       onLayout: () => this.notifyLayout(),
     })
     this.gameLibrary = new GameLibraryDisplay({
       coverTextures: [2, 3, 4, 5].map(index => experience.resources.items[`gameCardCover${index}`]),
+      labelTexture: this.labelTextures.library,
       debug: this.debug,
       onLayout: () => this.notifyLayout(),
     })
@@ -194,6 +202,8 @@ export default class Exhibition {
     this.airpods.destroy()
     this.internalComponents.destroy()
     this.gameLibrary.destroy()
+    // 子标签只释放自有材质/几何，加载的共享纹理（含 Dock 预设变体）在直接所有者中各释放一次。
+    for (const texture of new Set(Object.values(this.labelTextures))) texture.dispose()
     this.onLayout = null
     this.group.removeFromParent()
   }

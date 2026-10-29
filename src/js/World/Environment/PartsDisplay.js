@@ -3,9 +3,10 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import ExhibitSample from './ExhibitSample.js'
 import ExhibitLabel from './ExhibitLabel.js'
 import GlassPhysicalNodeMaterial from '../../Materials/Transmission/GlassPhysicalNodeMaterial.js'
+import { exhibitLabelLayout } from './exhibitLabelLayout.js'
 
 export default class PartsDisplay {
-  constructor({ sources, debug, transmissionBackdrop }) {
+  constructor({ sources, debug, transmissionBackdrop, labelTexture }) {
     this.transmissionBackdrop = transmissionBackdrop
     this.group = new THREE.Group()
     this.group.name = 'PartsDisplay'
@@ -35,7 +36,7 @@ export default class PartsDisplay {
       mesh.receiveShadow = true
       this.group.add(mesh)
     }
-    this.label = new ExhibitLabel({ width: 0.61, height: 0.62, name: 'PartsLegend', cutout: true })
+    this.label = new ExhibitLabel({ ...exhibitLabelLayout.parts, texture: labelTexture })
     // 标签嵌在实体背板前方，保留 0.002 的深度间距，避免贴着圆角边缘或形成 Z-fighting。
     this.label.mesh.position.set(0, 0.4, -0.0105)
     this.group.add(this.label.mesh)
@@ -47,41 +48,7 @@ export default class PartsDisplay {
     this.buttons.group.position.set(0.2, 0.29, 0.002)
     this.group.add(this.shell.group, this.dpad.group, this.buttons.group)
     this.unregisterGlass = transmissionBackdrop.register(this.board, [this.label.mesh, this.shell.group, this.dpad.group, this.buttons.group])
-    this.drawLabels()
     this.debugInit(debug)
-  }
-
-  drawLabels() {
-    this.label.redraw(null, (ctx, height) => {
-      // 仅文字周围有暖白纸签，其余像素透明，透出竖板后的环境与接触层次。
-      ctx.fillStyle = '#f0eee7'
-      for (const [x, y, width, h] of [[28, 20, 590, 65], [30, 647, 425, 115], [711, 372, 255, 116], [711, 787, 255, 153], [30, height - 72, 390, 50]]) {
-        ctx.fillRect(x, y, width, h)
-      }
-      const text = (value, x, y, size, weight = 700, color = '#35414b') => {
-        ctx.fillStyle = color
-        ctx.font = `${weight} ${size}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
-        ctx.fillText(value, x, y)
-      }
-      text('01 / COMPONENT STUDY', 44, 70, 40, 800)
-      ctx.strokeStyle = '#c5c6c1'
-      ctx.lineWidth = 1.5
-      ctx.beginPath()
-      ctx.moveTo(44, 100)
-      ctx.lineTo(956, 100)
-      ctx.moveTo(688, 150)
-      ctx.lineTo(688, 880)
-      ctx.stroke()
-      text('Controller Shell', 46, 698, 44, 800, '#202c36')
-      text('3D Printed', 46, 746, 32)
-      text('D-Pad', 728, 424, 44, 800, '#202c36')
-      text('3D Printed', 728, 472, 30)
-      // 右列宽度固定，拆成两行让字号真正增大，而不是把长标题横向压扁。
-      text('Button', 728, 833, 40, 800, '#202c36')
-      text('Caps', 728, 878, 40, 800, '#202c36')
-      text('3D Printed', 728, 924, 30)
-      text('DUO / MODULAR INPUT', 46, height - 35, 28)
-    })
   }
 
   debugInit(debug) {

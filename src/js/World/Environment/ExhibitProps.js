@@ -2,10 +2,11 @@ import * as THREE from 'three/webgpu'
 import ExhibitLabel from './ExhibitLabel.js'
 import { createPlinthGeometry } from './exhibitionGeometry.js'
 import { createGameCard } from './gameCard.js'
+import { exhibitLabelLayout } from './exhibitLabelLayout.js'
 
 // 道具以产品宽 W 为局部单位，挂在展区而非产品 Rig；标签不参与屏幕命中或模拟器更新。
 export default class ExhibitProps {
-  constructor({ coverTexture, debug, onLayout }) {
+  constructor({ coverTexture, debug, onLayout, labelTexture }) {
     this.onLayout = onLayout
     this.cardCoverTexture = coverTexture
     this.cardCoverTexture.colorSpace = THREE.SRGBColorSpace
@@ -19,7 +20,7 @@ export default class ExhibitProps {
     this.group.name = 'ExhibitProps'
     this.geometries = new Set()
     this.materials = new Set()
-    this.plaque = this.createPlaque()
+    this.plaque = this.createPlaque(labelTexture)
     this.card = this.createCard()
     this.group.add(this.plaque, this.card)
     this.debugInit(debug)
@@ -42,7 +43,7 @@ export default class ExhibitProps {
     return mesh
   }
 
-  createPlaque() {
+  createPlaque(labelTexture) {
     const group = new THREE.Group()
     group.name = 'ProductPlaque'
     const shell = this.material('#c8c8c1', 0.48)
@@ -67,24 +68,10 @@ export default class ExhibitProps {
     const plate = createPlinthGeometry(0.29, Math.hypot(depth, height), 0.007, 0.008, 0.001)
     plate.rotateX(Math.PI / 2)
     this.mesh(face, 'PlaquePlate', plate, shell)
-    this.plaqueLabel = new ExhibitLabel({ width: 0.268, height: 0.122, name: 'ProductPlaqueLabel' })
+    this.plaqueLabel = new ExhibitLabel({ ...exhibitLabelLayout.plaque, texture: labelTexture })
     // 沿面板法线留出 0.002W 实体间距，避免斜视角下标签与底板争用深度。
     this.plaqueLabel.mesh.position.z = 0.0035 + 0.002
     face.add(this.plaqueLabel.mesh)
-    this.plaqueLabel.redraw('#edeae3', ctx => {
-      ctx.fillStyle = '#476177'
-      ctx.fillRect(48, 48, 70, 8)
-      ctx.font = '700 40px sans-serif'
-      ctx.fillText('DUO / PRODUCT STUDY', 145, 63)
-      ctx.fillStyle = '#18232d'
-      ctx.font = '800 132px sans-serif'
-      ctx.fillText('iPhone Duo', 45, 222)
-      ctx.font = '700 58px sans-serif'
-      ctx.fillText('3D Printed Controller', 48, 302)
-      ctx.fillStyle = '#354652'
-      ctx.font = '700 46px sans-serif'
-      ctx.fillText('GAME CHANGER', 48, 389)
-    })
     // 旋转后的薄板可能低于支架底面，以真实几何最低点接地，避免调角度时悬浮。
     this.ground(group)
     return group

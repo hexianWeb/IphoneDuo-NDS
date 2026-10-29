@@ -1,10 +1,11 @@
 import * as THREE from 'three/webgpu'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import ExhibitSample from './ExhibitSample.js'
-import ExhibitLabel from './ExhibitLabel.js'
+import ThemeLabel from './ThemeLabel.js'
+import { themeLabelLayout, themeLabelPresets } from './exhibitLabelLayout.js'
 
 export default class ColorDock {
-  constructor({ sources, debug, events }) {
+  constructor({ sources, debug, events, labelTextures }) {
     this.events = events
     this.selectedTheme = 'classic'
     this.seats = []
@@ -16,8 +17,7 @@ export default class ColorDock {
     // Classic 与主机初始配色一致；其余主题的外壳、ABXY、D-Pad 各自成套。
     this.themes = [
       { key: 'classic', label: 'Classic', shell: sources.plasticParams.color, buttons: glbButton, dpad: glbDpad },
-      { key: 'retro', label: 'Retro', shell: '#d9d7d0', buttons: '#6c4f9e', dpad: '#34373c' },
-      { key: 'midnight', label: 'Midnight', shell: '#272c32', buttons: '#e8743b', dpad: '#aab2ba' },
+      ...themeLabelPresets.slice(1).map(theme => ({ ...theme })),
     ]
     this.params = {
       roughness: sources.plasticParams.roughness,
@@ -53,9 +53,10 @@ export default class ColorDock {
       for (const mesh of [...sample.meshes, seat]) this.themeMeshes.set(mesh, theme.key)
       return sample
     })
-    this.label = new ExhibitLabel({ width: 0.57, height: 0.065, name: 'ControllerThemesLegend' })
+    this.label = new ThemeLabel({ textures: labelTextures, themes: this.themes })
     this.label.mesh.position.set(0, 0.057, 0.167)
     this.group.add(this.label.mesh)
+    this.label.setSelectedTheme(this.selectedTheme)
     this.applyColors()
     this.updateSelection()
     this.update(0)
@@ -81,7 +82,7 @@ export default class ColorDock {
 
   applyColors() {
     this.samples.forEach((sample, index) => sample.setColors(this.themes[index]))
-    this.drawLabel()
+    this.label.setPalette(this.themes)
     this.events?.emit('controller:themes-updated')
   }
 
@@ -93,14 +94,14 @@ export default class ColorDock {
     if (object !== this.label.mesh) return this.themeMeshes.get(object) ?? null
     // 标签画布使用 1000 宽的逻辑坐标；与绘制的三列主题中心共用同一分区。
     const x = uv.x * 1000
-    if (x < 550 || x > 985) return null
-    return this.themes[Math.min(2, Math.floor((x - 550) / 145))].key
+    if (x < themeLabelLayout.hitMin || x > themeLabelLayout.hitMax) return null
+    return this.themes[Math.min(2, Math.floor((x - themeLabelLayout.hitMin) / themeLabelLayout.gap))].key
   }
 
   setSelectedTheme(key) {
     this.selectedTheme = key
     this.updateSelection()
-    this.drawLabel()
+    this.label.setSelectedTheme(key)
   }
 
   setHoveredTheme(key) {
@@ -113,38 +114,6 @@ export default class ColorDock {
     this.seats.forEach((seat, index) => {
       const key = this.themes[index].key
       seat.material.color.set(key === this.hoveredTheme ? '#b7ccdb' : key === this.selectedTheme ? '#a7c2d5' : '#dedbd4')
-    })
-  }
-
-  drawLabel() {
-    this.label.redraw('#e7e3dc', (ctx) => {
-      ctx.fillStyle = '#202c36'
-      ctx.font = '800 46px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      ctx.fillText('Controller Themes', 30, 50)
-      ctx.fillStyle = '#35414b'
-      ctx.font = '700 27px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      ctx.fillText('02 / SHELL + BUTTONS', 30, 93)
-      this.themes.forEach((theme, index) => {
-        const x = 622 + index * 145
-        // 每个主题三枚色点：外壳、ABXY、D-Pad。
-        for (const [dot, value] of [theme.shell, theme.buttons, theme.dpad].entries()) {
-          ctx.fillStyle = value
-          ctx.beginPath()
-          ctx.arc(x + (dot - 1) * 26, 42, 11, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.strokeStyle = '#b2b5b1'
-          ctx.lineWidth = 1
-          ctx.stroke()
-        }
-        ctx.fillStyle = '#25343f'
-        ctx.textAlign = 'center'
-        ctx.font = '700 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-        ctx.fillText(theme.label, x, 92)
-        if (theme.key === this.selectedTheme) {
-          ctx.fillStyle = '#32668b'
-          ctx.fillRect(x - 35, 103, 70, 4)
-        }
-      })
     })
   }
 

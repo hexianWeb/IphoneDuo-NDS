@@ -1,18 +1,18 @@
 import * as THREE from 'three/webgpu'
+import { getLabelImageSize } from './exhibitLabelLayout.js'
 
 export default class ExhibitLabel {
-  constructor({ width, height, name, cutout = false, resolution = 2048 }) {
-    this.canvas = document.createElement('canvas')
-    this.canvas.width = resolution
-    // 短标签的最低高度也随分辨率增长，字体和几何尺寸继续使用原来的逻辑坐标。
-    this.canvas.height = Math.max(Math.round(resolution / 8), Math.round(resolution * height / width))
-    this.context = this.canvas.getContext('2d')
-    if (!this.context) throw new Error('无法创建展品标签画布')
-    this.logicalHeight = 1000 * height / width
-    this.texture = new THREE.CanvasTexture(this.canvas)
+  constructor({ width, height, name, texture, cutout = false, resolution = 1024, anisotropy = 8 }) {
+    const size = getLabelImageSize({ width, height, resolution })
+    if (!texture?.isTexture || texture.image?.width !== size.width || texture.image?.height !== size.height) {
+      throw new Error(`展品标签 ${name} 缺少 ${size.width}×${size.height} 离线纹理，请运行 generate-labels`)
+    }
+    // 只借用 Resources 已加载的纹理；Exhibition 统一持有/释放，标签只拥有几何和材质。
+    this.texture = texture
     this.texture.name = `${name}_Labels`
     this.texture.colorSpace = THREE.SRGBColorSpace
-    this.texture.anisotropy = 8
+    this.texture.flipY = true
+    this.texture.anisotropy = anisotropy
     this.material = new THREE.MeshStandardNodeMaterial({
       name: `${name}_Label_Surface`, map: this.texture, roughness: 0.65, metalness: 0,
       // 镂空标签仍走不透明深度通道，只保留纸签/文字像素，避免整张画布盖住玻璃。
@@ -23,29 +23,9 @@ export default class ExhibitLabel {
     this.mesh.receiveShadow = true
   }
 
-  redraw(background, draw) {
-    const ctx = this.context
-    ctx.setTransform(this.canvas.width / 1000, 0, 0, this.canvas.height / this.logicalHeight, 0, 0)
-    ctx.clearRect(0, 0, 1000, this.logicalHeight)
-    if (background) {
-      ctx.fillStyle = background
-      ctx.fillRect(0, 0, 1000, this.logicalHeight)
-    }
-    ctx.textBaseline = 'alphabetic'
-    ctx.textAlign = 'left'
-    draw(ctx, this.logicalHeight)
-    // 仅构造或标签内容改变时上传，静态展示不占用 Experience 的逐帧纹理更新。
-    this.texture.needsUpdate = true
-  }
-
   destroy() {
     this.mesh.removeFromParent()
     this.mesh.geometry.dispose()
     this.material.dispose()
-    this.texture.dispose()
-    this.canvas.width = 1
-    this.canvas.height = 1
-    this.context = null
-    this.canvas = null
   }
 }

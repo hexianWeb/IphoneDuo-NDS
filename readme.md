@@ -16,6 +16,17 @@ npm run build
 
 请使用支持 WebGPU 的最新版浏览器访问开发地址。
 
+### 离线展品标签
+
+标签 PNG 已生成在 `public/labels/`，日常 `dev/build` 不需要 Chrome。修改标签文案/排版后，在 Windows 参考字体环境中重新生成：
+
+```powershell
+node scripts/generate-labels.mjs 'C:/Program Files/Google/Chrome/Application/chrome.exe' 'C:/Users/f1686533/AppData/Local/Temp/opencode'
+node scripts/verify-labels.mjs
+```
+
+第二个参数可换成其它**已有**临时目录。追加 `--check` 可检查重新生成是否一致。常规标签与三套 Dock 选中状态直接加载图片，只有自定义调色才按需创建 Canvas。绘图源、验收与性能边界见 [标签离线化记录](docs/LABEL_TEXTURE_OPTIMIZATION_2026-10-29.md)。
+
 ## 在 3D 产品中游玩 NDS
 
 运行 `npm run dev`，打开首页，等待 Intro 完成（或在 Tweakpane 中点击 `Skip Intro`）。

@@ -2,9 +2,10 @@ import * as THREE from 'three/webgpu'
 import ExhibitLabel from './ExhibitLabel.js'
 import { createPlinthGeometry } from './exhibitionGeometry.js'
 import { createGameCard } from './gameCard.js'
+import { exhibitLabelLayout } from './exhibitLabelLayout.js'
 
 export default class GameLibraryDisplay {
-  constructor({ coverTextures, debug, onLayout }) {
+  constructor({ coverTextures, debug, onLayout, labelTexture }) {
     if (coverTextures.length !== 4 || coverTextures.some(texture => !texture?.image)) throw new Error('Game Library 缺少四张卡带封面')
     this.onLayout = onLayout
     // 原整体比例 1.1 缩至 75%；从 +Y 俯视，绕 Y 的负角度表示顺时针，再转 15°。
@@ -31,19 +32,9 @@ export default class GameLibraryDisplay {
     })
     this.looseCard = createGameCard({ coverTexture: coverTextures[3], name: 'LibraryLooseCard', geometries: this.geometries, materials: this.materials })
     this.group.add(this.looseCard)
-    this.label = new ExhibitLabel({ width: 0.718, height: 0.039, name: 'GameLibraryLabel' })
+    this.label = new ExhibitLabel({ ...exhibitLabelLayout.library, texture: labelTexture })
     this.label.mesh.position.set(0, 0.0275, 0.1615)
-    this.label.texture.anisotropy = 16
     this.group.add(this.label.mesh)
-    this.label.redraw('#e8eaec', ctx => {
-      ctx.fillStyle = '#202c36'
-      ctx.font = '800 29px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      ctx.fillText('Game Library', 24, 36)
-      ctx.fillStyle = '#6e7881'
-      ctx.font = '600 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      ctx.textAlign = 'right'
-      ctx.fillText('DUO COMPATIBLE', 970, 35)
-    })
     this.applyInclination()
     this.debugInit(debug)
   }

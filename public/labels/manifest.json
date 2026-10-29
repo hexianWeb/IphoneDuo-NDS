@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "sourceHash": "857e2e1640426e1ed38f0418af32fee8cac4c2ea70e736b96899835b4048014a",
+  "fonts": {
+    "segoeui.ttf": "ba32a222b23d727267cf1aba4e5296fe84ce99b9d910915103fc085d7931bc88",
+    "segoeuib.ttf": "1b242874a2f57529060e770ba313e027a99d40b3c36e1c7e8b2dece16ad6ed88",
+    "seguisb.ttf": "9853283466bd43993b9813215281fb9c7090cbd8e9b5453f6d0d040622e117e2",
+    "arial.ttf": "c9b76220a5be42ead4733611e417cd65c5fd8aeaa33eb56576ac378a37d130a1",
+    "arialbd.ttf": "766f06ac8761f82f25d032a220e89438f6064591af9915061f20b949efdedf69"
+  },
+  "assets": [
+    {
+      "key": "parts",
+      "width": 1024,
+      "height": 1041,
+      "file": "parts.png",
+      "bytes": 67411,
+      "sha256": "7a6a829b8fceecee242726624d7a2f1863ee66400aea637eaf9a96a4100e12d5"
+    },
+    {
+      "key": "dock",
+      "width": 1024,
+      "height": 128,
+      "file": "dock.png",
+      "bytes": 29440,
+      "sha256": "719a3cff105fa35b0089b357883abd2bfd202e240d35d54df6f6f5f49e692ae4"
+    },
+    {
+      "key": "plaque",
+      "width": 1024,
+      "height": 466,
+      "file": "plaque.png",
+      "bytes": 51253,
+      "sha256": "15ca4c620a161d9e0eeb036462fb295270f7d1ce8cd633dbe574e13df128e9f2"
+    },
+    {
+      "key": "internalLegend",
+      "width": 1024,
+      "height": 128,
+      "file": "internalLegend.png",
+      "bytes": 18410,
+      "sha256": "57af9581058a5ea7e8f7585391936243924ebe92b002c2887ab4e66c58bd53a2"
+    },
+    {
+      "key": "internalNames",
+      "width": 1024,
+      "height": 128,
+      "file": "internalNames.png",
+      "bytes": 18640,
+      "sha256": "f8060303d3a101d44867fe5961735c73806c33d0880bcc6fc716b88b488c351a"
+    },
+    {
+      "key": "library",
+      "width": 1024,
+      "height": 128,
+      "file": "library.png",
+      "bytes": 13727,
+      "sha256": "0bb9d63cbaa389ca150a5ce228c7fbd01376afd900cc852fd0a8935659c008ab"
+    },
+    {
+      "key": "dockRetro",
+      "width": 1024,
+      "height": 128,
+      "file": "dockRetro.png",
+      "bytes": 29443,
+      "sha256": "090389c8cdb0dd4c7be3e93d5e95eefcde17e168090780c7185745aa0f650c41"
+    },
+    {
+      "key": "dockMidnight",
+      "width": 1024,
+      "height": 128,
+      "file": "dockMidnight.png",
+      "bytes": 29436,
+      "sha256": "bae95094cf8acb40fcc02b8208cc3c1361c2fb5cb7db48a4daad375cdda3300e"
+    }
+  ]
+}

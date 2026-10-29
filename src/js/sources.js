@@ -1,3 +1,5 @@
+import { labelAssetKeys } from './World/Environment/exhibitLabelLayout.js'
+
 // Spike 资源按需加载，不进入产品首屏的 Resources.load()。
 export const ndsSources = {
   core: '/vendor/pilas-melonds/pilas-melonds-core.js',
@@ -11,6 +13,12 @@ export const ndsSources = {
 
 // optimized 副本由 scripts/optimize-textures.mjs 统一生成；原始大图留在 public 供重新加工。
 export default [
+  // 离线 Canvas 美术由 scripts/generate-labels.mjs 生成；与其它资源同批加载、报错和跟踪进度。
+  ...labelAssetKeys.map(key => ({
+    name: `${key}LabelTexture`,
+    type: 'texture',
+    path: `/labels/${key}.png`,
+  })),
   {
     name: 'iphoneModel',
     type: 'gltfModel',

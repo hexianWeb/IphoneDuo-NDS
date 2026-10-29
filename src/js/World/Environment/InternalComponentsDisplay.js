@@ -1,16 +1,11 @@
 import * as THREE from 'three/webgpu'
 import ExhibitLabel from './ExhibitLabel.js'
 import { createPlinthGeometry } from './exhibitionGeometry.js'
+import { exhibitLabelLayout, internalComponents as COMPONENTS } from './exhibitLabelLayout.js'
 
 // detail.glb 的三个根节点共用原点；语义映射集中在展品组件，独立摆放不影响产品 Rig。
-const COMPONENTS = [
-  { node: 'memory', label: 'Memory', x: -0.29, width: 0.105, depth: 0.225 },
-  { node: 'bash', label: 'Mainboard', x: 0, width: 0.23, depth: 0.225 },
-  { node: 'cpu', label: 'Processor', x: 0.29, width: 0.215, depth: 0.215 },
-]
-
 export default class InternalComponentsDisplay {
-  constructor({ gltf, debug, onLayout }) {
+  constructor({ gltf, debug, onLayout, labelTextures }) {
     if (!gltf?.scene) throw new Error('controllerDetailModel 未返回有效的 GLTF Scene')
     for (const { node } of COMPONENTS) {
       if (!gltf.scene.getObjectByName(node)) throw new Error(`内部元件模型缺少节点：${node}`)
@@ -67,7 +62,7 @@ export default class InternalComponentsDisplay {
       this.deck.add(display.group)
       this.components.push(display.group)
     }
-    this.createLabels()
+    this.createLabels(labelTextures)
     this.update(0)
     this.applyInclination()
     this.debugInit(debug)
@@ -124,22 +119,12 @@ export default class InternalComponentsDisplay {
     return { group, size: size.multiplyScalar(fit) }
   }
 
-  createLabels() {
-    this.legend = new ExhibitLabel({ width: 0.83, height: 0.026, name: 'InternalComponentsLegend' })
-    this.legend.texture.anisotropy = 16
+  createLabels(labelTextures) {
+    this.legend = new ExhibitLabel({ ...exhibitLabelLayout.internalLegend, texture: labelTextures.legend })
     this.group.add(this.legend.mesh)
     this.labels.push(this.legend)
-    this.legend.redraw('#e8eaec', ctx => {
-      ctx.fillStyle = '#202c36'
-      ctx.font = '800 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      ctx.fillText('Controller Inside', 18, 20)
-      ctx.fillStyle = '#4a5660'
-      ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      ctx.fillText('03 / INTERNAL COMPONENTS', 20, 29)
-    })
-    const names = new ExhibitLabel({ width: 0.84, height: 0.031, name: 'InternalComponentNames', cutout: true })
-    names.texture.anisotropy = 16
-    // alphaTest 的硬阈值会把 Canvas 字形的半透明抗锯齿边缘切掉；此静态文字保留平滑 Alpha。
+    const names = new ExhibitLabel({ ...exhibitLabelLayout.internalNames, texture: labelTextures.names })
+    // alphaTest 的硬阈值会把 PNG 字形的半透明抗锯齿边缘切掉；此静态文字保留平滑 Alpha。
     // 关闭深度写入，仍做深度测试，并沿法线留间距，避免薄标签挡住元件或与顶板争用深度。
     names.material.alphaTest = 0
     names.material.transparent = true
@@ -148,14 +133,6 @@ export default class InternalComponentsDisplay {
     names.mesh.position.set(0, 0.007, 0.126)
     this.deck.add(names.mesh)
     this.labels.push(names)
-    names.redraw(null, ctx => {
-      ctx.textAlign = 'center'
-      ctx.fillStyle = '#26333e'
-      ctx.font = '700 26px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      for (const component of COMPONENTS) {
-        ctx.fillText(component.label, (component.x / 0.84 + 0.5) * 1000, 27)
-      }
-    })
   }
 
   applyInclination() {
