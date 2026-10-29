@@ -514,3 +514,57 @@ Phase 6 验收结论：
 - Memory / Mainboard / Processor 改为悬浮在各自承托面上方，展台、承托面和标签固定。整体倍率应用前，沿倾斜展板局部 +Y 抬升 0.028，起伏幅度 0.0045、角速度 0.9 rad/s（周期约 7 秒），相邻元件错开 1.7 rad；姿态和 GLB 固定导出矩阵保持。
 - Exhibition 使用现有唯一循环传入绝对秒数，仅在展组与元件可见时更新三个外层组的位置。没有新增时间线、事件监听或 GPU 资源；既有阴影 tracker 捕捉世界矩阵变化，包围盒余量覆盖完整浮动范围，不逐帧通知布局。销毁时清空元件引用。
 - 真实 GLB 的 CPU 检查覆盖完整周期，最小承托面法向间隙为局部 0.0245，当前世界倍率下约 0.0753，无穿台且模型原矩阵保持。`npm run build`（102 modules）与 `git diff --check` 通过；1920×855 WebGPU 页面确认悬浮展品、固定展台和标签，无新增浏览器错误。最终高度、起伏幅度与观感请用户在支持 WebGPU 的最新版浏览器中视觉验收；本轮未提交。
+
+## 22. 首屏纹理与素材减重（2026-10-28）
+
+- 用户明确要求减小 Lightmap、标签及离屏纹理占用。原始素材保留，新增 `public/optimized/` 派生副本和带 SHA-256 的清单；Lightmap 在线性浮点域面积降采样为 1024² HALF / ZIP EXR，保留 uv1、flipY、色彩空间及强度。内部元件与植物仅缩小内嵌图片到长边上限 512，非图片 bufferView 字节、节点、变换和材质定义保持。
+- 手机 UI 与 Game Home 参考图保持尺寸、改无损 WebP；六张封面等比长边上限 1024、WebP quality 90。11 项处理素材从 74.83 MB 降至 7.83 MB，全部 21 项首屏静态资源从 83.31 MB 降至 16.31 MB，不含 JS / CSS / 后续 WASM / ROM。sources 统一引用新副本；构建排除这 11 项原件，仍排除本地 ROM，其它公共文件维持原行为。
+- ExhibitLabel 默认 2048 → 1024、短标签最低 256 → 128，逻辑字号和几何不变。AO 全分辨率降噪目标改为 R8 单通道，保留原样本数、法线与深度预通道；玻璃捕获比例 0.75 → 0.5，仍为 HDR + mipmap。主画面的 HDR、4× MSAA 与其深度附件、2048² 阴影保持，不把运行时 depth 当可压缩图片处理。
+- `node scripts/verify-textures.mjs`、`npm run build`、`node scripts/verify-textures.mjs --dist`、`node scripts/verify-nds-mapping.mjs` 通过；生产 preview 已确认 11 项副本均按清单哈希正确提供。重生成仅需本机 ImageMagick 和现有 Three.js，不增加 npm 依赖。浏览器复测及原始对照材料见 `docs/TEXTURE_OPTIMIZATION_2026-10-28.md`，最终标签清晰度、元件丝印、Lightmap 与玻璃观感由用户验收。本轮未提交。
+- 同尺寸 WebGPU 浏览器复测：Needle 44 项纹理列表约 239.5 → 129.6 MiB（-45.9%）；Three.js 59 项纹理跟踪约 357.0 → 231.6 MiB（-35.1%，口径不同不混用）。GPU 降噪目标确认为 R8，主画面 4× MSAA / depth24plus 保持，稳态仍约 60 FPS / 537 draws；Hero / Play 对照及生产首屏渲染通过，未捕获新增 JS / GPU 错误。本机初始化前后均约 38.8 s，首次 warmup 仍占约 36 s；本次已确认内存与下载收益，但不能宣称解决首次管线准备等待，后者需单独优化。
+
+## 23. 首次材质与渲染通道准备定位（2026-10-28）
+
+- 新增独立 `scripts/profile-preparation.mjs`，通过临时 Vite 的内存转换挂接真实 NodeBuilder / GPU 管线 / 队列完成标记；仅在独立 Chrome 中注入，不修改应用或 node_modules。报告与生成的 WGSL 保存在指定临时目录，完整方法、口径和材料见 `docs/PREPARATION_PROFILE_2026-10-28.md`。
+- 两次同步基线初始化 38.22 / 35.09 s，首次 warmup 36.34 / 33.35 s；三大通道分别新增背景捕获 44、GTAO geometry 39、带 GTAO 主画面 45 个 GPU 管线，另有 24 个阴影管线。法线预通道虽只输出几何法线，实际 WGSL 仍包含完整物理光照；约 55.8 KB 的外壳法线 shader 与主画面接近，是已确认的冗余。
+- 配色样品按键的 NodeBuilder 重复最多，主机清漆按键约 70–72 KB / 片元变体，玻璃约 71 KB；但不把源码大小或并行 Promise 延迟当成单材质驱动编译耗时。只关闭背景捕获初始化约 17.68 s，旁路完整 AO 管线约 21.82 s，仅简化按键约 34.24 s；支持先改跨通道准备，而不是优先砍按键画质。
+- 实际管线异步请求、等待收敛后跨帧完整重绘的独立诊断初始化约 6.44 s、首次 warmup 5.14 s；之后恢复同步基线仍需 35.09 s。最终 warmup 绘制计数与基线相符，无捕获的 JS / WebGPU 错误。这个 backend 私有钩子实验不是正式修复，应用当前启动流程未改；正式异步准备仍需覆盖 MRT / AO context、阴影附件、透明通道、首帧完整性及取消 / HMR 销毁验收。本轮未提交。
+- 补充逐条串行创建管线并排除自身排队的服务计时：首次主画面约 15.65 s、背景捕获 13.58 s、法线预通道 5.30 s；主机按键族累计约 7.59 s、展示按键族 6.61 s、AirPods 3.44 s，玻璃本体单管线约 0.68 s。该时间为驱动完成墙钟，不是稳态 GPU 帧耗时。轻量法线 override 虽将该通道 39 → 12 个管线、2.05 MB → 45 KB 片元源码，总初始化约 35.76 s，未明显改善；因此不夸大这项的单独首屏收益，仍优先正式异步准备与背景变体控制。
+
+## 24. 真实管线异步准备正式接入（2026-10-28）
+
+- 按用户确认实施收益最高的 P0，不继续叠加未经验证的背景裁剪或材质降级。Renderer 持有新增 `PipelinePreparation`，仅在真实帧同步提交栈内适配 Three 原生异步材质管线入口，立即恢复原属性；并行等待、检查错误状态、跨帧强制重绘阴影/透射/GTAO，零新管线且 GPU 队列完成才放行，保留阴影 seed 与深度 generation 稳定步骤。显式校验 Three.js r186 / WebGPU，升级须重新验证私有接口。
+- `World.preparePresentation()` 保留 Phone / Game Home / Playing / Folded 顺序、剔除恢复与 8° 首帧；Experience 和 ScreenManager 检查完成结果及游戏进入 generation。预热期间正常循环不抢先同步创建新管线，resize 延后队列完成再应用并重绘；销毁取消帧/等待并消费迟到拒绝，正式动画不残留 hook。
+- 同机独立 Chrome profile 初始化由同步 35.09–38.22 s 降至正式实现 6.67–7.47 s（按 35.09→7.47 s，约 -79%）；首次 warmup 33.35–36.34→5.13–5.64 s，约 154 个新材质管线、3 轮收敛。稳态约 59.95–59.97 FPS / 537 draws，保留清漆、印花、Lightmap、实时玻璃、32 样本 GTAO、4× MSAA 和阴影分辨率，不把异步等待或本机加载当成通用 GPU 帧耗时/网络冷启动承诺。
+- 新增 `scripts/verify-pipeline-preparation.mjs`（无需 GPU 的收敛、精确还原、错误/队列拒绝、销毁与迟到结果测试）和 `scripts/verify-startup.mjs`（独立 Chrome + Vite/preview 的普通启动、编译中 resize、销毁重建与生产检查）。Folded 首帧、完整重绘计数、Replay/Skip、取消进入游戏、1200×851 Canvas 重绘和同 Canvas 重建通过；生产 preview 连续三轮约 6.77–6.85 s 到 Loading 完成，未加载 WASM / ROM，成功样本无捕获 JS / GPU 错误。早期 preview 资源请求失败已留档，HTTP 字节/MIME 正常但根因未定，未将失败样本计入预热收益。
+- 具体实现、时间口径、图片对照与材料目录见 `docs/PREPARATION_PROFILE_2026-10-28.md` 第 6 节。应用无新依赖、未改 node_modules；最终视觉验收交用户。本轮未提交或推送。
+- 最终构建、语法检查、新增逻辑测试、NDS 映射、派生纹理/生产排除及 diff 空白检查通过；构建只有既有大 chunk 警告。加强测试另确认旧 Native 编译未结束即在同一 Canvas 重建的 HMR 生命周期安全，不依赖先等旧任务结束或整页刷新。
+
+## 25. 按键材质节点复用（2026-10-29）
+
+- 按用户要求实际使用 Needle MCP 的场景/实时 TSL 节点检查，以及 Blender MCP 的临时 GLB 审计。ABXY 原模型各只有一个材质槽，确认主要机会是运行时印花/颗粒算法的重复构建，而非先回 Blender 拆改资源。Blender 审计结束清理临时内容、恢复原空场景，未保存或导出，GLB/UV/Lightmap 不变。
+- `ButtonPrint` 缓存投影/油墨/表面响应节点，每个 Mesh 独立持有投影参数；主机颗粒/清漆算法也共享节点，通过当前材质读取各键尺度。D-Pad 仍无字母，三套 Dock 材质、配色、底色、调参和资源所有权保持独立；只在 `ExhibitSample` 补充对应 Mesh，不合并几何或 draw calls。
+- 实际阴影覆写会用临时 `ShadowMaterial`，印花数据不能直接读当前材质；初版浏览器错误已用定向记录和测试复现，改用标准对象 `reference()` 后通过，没有增加 renderer 私有适配或关闭阴影。新增 `scripts/verify-button-materials.mjs` 覆盖共享算法、独立参数、非均匀缩放、阴影覆写/跨 Mesh 编号和释放。
+- 同机交错对照：首次按键 NodeBuilder 62→12、CPU 构建累计 1.23–1.27→0.29–0.33 s；全部 NodeBuilder 225→175、新材质 GPU 管线 154→129。初始化 7.10–7.36→6.18–6.26 s，首次 warmup 5.50–5.57→4.52–4.57 s；旧源码仅替换临时服务响应，没有回退工作区。稳态仍约 60 FPS / 537 draws，不把构建累计时间当 GPU 帧耗时。
+- `verify-startup.mjs` 新增 materials 模式与可选 `DUO_BUTTON_SNAPSHOT` 响应对照：三主题 Hero/Play、独立配色、Folded、完整重绘、Replay/Skip/取消、resize 和编译中销毁立即重建通过；六组截图平均通道差 0.021–0.033 / 255 标度，最终视觉验收交用户。最新生产 dist 启动通过，无捕获 JS/GPU 错误；偶发开发动态模块请求取消样本单独留档，未计入收益，也未宣称根因已解决。
+- 详见 `docs/BUTTON_MATERIAL_OPTIMIZATION_2026-10-29.md`。本轮没有新增依赖或修改素材，没有提交或推送。
+
+## 26. 桌面展品消失与 Needle 材质预览修复（2026-10-29）
+
+- 根据用户 1166×982 截图，Needle 确认 PartsDisplay、ColorDock、AirPods、内部元件和卡带展台仍存在，但父组 visible=false；同尺寸新增 `verify-startup.mjs layout` 检查在旧逻辑下稳定失败，输出 compact=true、五组全隐藏。根因为旧布局只看 Canvas 宽高比 <1.35，将较高的桌面窗口也当成窄屏，不是模型删除或按键管线复用导致整场漏绘。
+- Exhibition 现仅在 Canvas 宽度 ≤720 CSS px 且宽高比 <1.35 时精简展品，与现有页头/画布宽度断点一致，保留手机窄屏行为和原独立显示开关；1166×982 等桌面窗口显示完整展区。不改镜头、场景坐标、资源或按键优化；PRD 第 29.3 节同步修正。此前只测宽屏和较横向的 resize，遗漏了用户这类窗口比例。
+- 同时通过临时定向记录确认控制台 center 缺值发生在 `Needle Preview sphere`：预览球复用按键材质但没有产品 Mesh 的投影参数。`ButtonPrint` 让材质保留同一份投影参数供预览读取；正式场景/阴影仍优先用当前 Mesh，既不串键也不绑定临时阴影材质。先加入预览球回归复现错误，再修复；临时诊断代码已移除。
+- 用户连接页面的五组展品经 Needle 复核均恢复 visible=true；1166×982 启动及 390×799 精简后恢复桌面的浏览器检查通过，无捕获 JS/GPU 错误。回归脚本另覆盖 720/721px 边界和实际预热/重绘，不只检查可见性属性。最终视觉仍交用户验收，本轮未提交。
+- 最终 layout 模式的 1166→390→720→721→1166 宽度序列、三配色 materials 模式、生产 preview、构建、按键/管线逻辑检查、语法和 diff 检查全部通过；五组布局恢复及 Needle 错误日志为空再次确认。材料：`duo-startup-layout-LVkQpq/`、`duo-startup-materials-fzIKy9/`、`duo-startup-production-DmE4NJ/`（同前临时根目录）。
+
+## 27. ExhibitLabel 离线 PNG（2026-10-29）
+
+- 用户确认将实体标签改成离线生成图片。本轮仅处理标签，不改玻璃、背景捕获、GTAO、模型、镜头、布局或模拟器。Needle 实际复查六标签均可见，材质 map 的 image.tagName 均为 IMG，不是仅从源码推断。
+- 新增 `generate-labels.mjs`，复用原 Canvas 排版，使用本机 Chrome / Windows Segoe UI、Arial 生成八张 `public/labels/*.png`（257,760 B）及源/图片/字体哈希清单。五静态标签与 Dock 三种选中状态均经 sources / Resources 加载，保持原物理尺寸、分辨率、光照、遮挡、透明边缘和过滤。日常 build 不启动 Chrome，脚本支持 --check 重生成一致性检查，原模型及上一轮派生素材不变。
+- Dock 预设只切换同格式 map，不新增 shader 或 Canvas；自定义颜色/文字才按需创建并复用单个 CanvasTexture，回到预设或销毁时释放，模型默认色变化也不会冻结成旧色点。加载纹理由 Exhibition 统一去重释放，标签只拥有材质/几何，动态纹理由 ThemeLabel 管理。
+- 实验的纹理遮罩/uniform 版本实际增加 3 个新准备管线（129→132），交错样本没有证明收益，已撤掉该 shader 和遮罩文件并留档。最终普通 map 方案恢复 129 个首轮新材质管线，不撤销此前按键节点复用。
+- 同机最终交错：初始六个标签 Canvas→0、七次绘图→0；旧绘图同步提交累计 19.8–23.5 ms→0。整体初始化旧 6.52/7.31 s，新 6.97/7.37 s，范围重叠且新版未更快，不宣称整体启动/FPS 提升；稳态仍约 60 FPS / 537 draws，Play 完整重绘仍为 411 draws。新增图片可缓存，但 Dock 全部状态上传后相对原单图最多增加约 1.33 MiB 的含 mipmap 纹理估值。
+- `verify-labels` 覆盖 PNG 哈希/尺寸、预设无 DOM/Canvas、借用资源、懒自定义画布的复用/释放、色彩空间、UV 命中与无新增 shader；旧纹理回归脚本已适配离线注入。实际 WebGPU 离屏读回确认三套预设与自定义三色/下划线；五张静态 PNG 和四套 Dock 读回图与旧版逐像素一致，六套整场截图平均差 0.016–0.027 / 255，最终视觉仍交用户。
+- 最终 labels 两组新旧交错、1166→390→720→721→1166 布局、编译中 resize、销毁立即重建（八张标签纹理各 dispose 一次）、生产 preview 均通过，无捕获 JS/GPU 错误。材料仍在前述临时根目录：旧 `duo-startup-labels-p3MUtg/`、`duo-startup-labels-JbZXJU/`；新 `duo-startup-labels-JKOn35/`、`duo-startup-labels-4YIAqe/`；布局 `duo-startup-layout-Fga6zj/`、resize `duo-startup-resize-Z9uNzp/`、销毁 `duo-startup-destroy-4bVt9I/`、生产 `duo-startup-production-ErX9zc/`。早期开发模块取消失败另行留档，不计作成功或性能收益。
+- 生成说明加入 readme，PRD 第 29.4/29.5/29.9 节同步，细节见 `docs/LABEL_TEXTURE_OPTIMIZATION_2026-10-29.md`。没有新增依赖、提交或推送。
+- 最终生成/--check、build、`verify-labels --dist`、`verify-textures --dist`、按键/管线/NDS 映射、语法与 diff 检查通过；Needle 六个实际标签均为 IMG 且错误日志为空。最新原版/最终版像素对比 `duo-label-diff-feIY9O/` 再次确认五静态图、三预设及自定义 Dock 读回完全一致，整场六套截图平均通道差 0.016–0.026 / 255。
