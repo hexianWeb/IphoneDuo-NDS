@@ -24,6 +24,7 @@ export default class Exhibition {
       showDock: true,
       compact: false,
       hideOnNarrow: true,
+      narrowWidth: 720,
       narrowAspect: 1.35,
       widthRatio: 1.5,
       depthRatio: 1.61,
@@ -133,7 +134,9 @@ export default class Exhibition {
 
   resize() {
     const p = this.params
-    p.compact = this.sizes.width / this.sizes.height < p.narrowAspect
+    // 桌面窗口较高或打开 Inspector 时也可能接近正方形；不能仅按宽高比隐藏整个展区。
+    // 宽度断点与页头/画布的 720px 响应式规则一致，只有真正窄且不够横向的画布才精简展品。
+    p.compact = this.sizes.width <= p.narrowWidth && this.sizes.width / this.sizes.height < p.narrowAspect
     const showSides = !p.hideOnNarrow || !p.compact
     this.group.visible = p.enabled
     this.parts.visible = p.showParts && showSides
@@ -154,6 +157,7 @@ export default class Exhibition {
       this.folder.addBinding(this.params, key).on('change', () => this.resize())
     }
     this.compactBinding = this.folder.addBinding(this.params, 'compact', { readonly: true, label: 'Narrow viewport' })
+    this.folder.addBinding(this.params, 'narrowWidth', { min: 320, max: 1024, step: 1 }).on('change', () => this.resize())
     this.folder.addBinding(this.params, 'narrowAspect', { min: 1, max: 1.6, step: 0.05 }).on('change', () => this.resize())
     const plinth = this.folder.addFolder({ title: 'Plinth / product units' })
     const ranges = {
