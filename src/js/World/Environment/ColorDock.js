@@ -1,8 +1,8 @@
-import * as THREE from 'three/webgpu'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
+import * as THREE from 'three/webgpu'
+import { themeLabelLayout, themeLabelPresets } from './exhibitLabelLayout.js'
 import ExhibitSample from './ExhibitSample.js'
 import ThemeLabel from './ThemeLabel.js'
-import { themeLabelLayout, themeLabelPresets } from './exhibitLabelLayout.js'
 
 export default class ColorDock {
   constructor({ sources, debug, events, labelTextures }) {
@@ -40,9 +40,12 @@ export default class ColorDock {
       // 外壳与按键作为一个展品整体适配尺寸，按键保持 GLB 中的安装相对位置。
       // 展示坐标 rotation = 0 时 D-Pad 在左、ABXY 在右，即横握朝向；宽度受相邻样品间距约束。
       const sample = new ExhibitSample({
-        sources: parts, width: 0.19, height: 0.2,
+        sources: parts,
+        width: 0.19,
+        height: 0.2,
         buttonPrint: sources.buttonPrint,
-        plasticParams: { ...sources.plasticParams, color: theme.shell }, name: `Dock_${theme.key}`,
+        plasticParams: { ...sources.plasticParams, color: theme.shell },
+        name: `Dock_${theme.key}`,
       })
       const seat = new THREE.Mesh(this.seatGeometry, this.material.clone())
       seat.position.set((index - 1) * 0.205, 0.116, 0)
@@ -91,10 +94,12 @@ export default class ColorDock {
   }
 
   getThemeAtHit({ object, uv }) {
-    if (object !== this.label.mesh) return this.themeMeshes.get(object) ?? null
+    if (object !== this.label.mesh)
+      return this.themeMeshes.get(object) ?? null
     // 标签画布使用 1000 宽的逻辑坐标；与绘制的三列主题中心共用同一分区。
     const x = uv.x * 1000
-    if (x < themeLabelLayout.hitMin || x > themeLabelLayout.hitMax) return null
+    if (x < themeLabelLayout.hitMin || x > themeLabelLayout.hitMax)
+      return null
     return this.themes[Math.min(2, Math.floor((x - themeLabelLayout.hitMin) / themeLabelLayout.gap))].key
   }
 
@@ -105,7 +110,8 @@ export default class ColorDock {
   }
 
   setHoveredTheme(key) {
-    if (this.hoveredTheme === key) return
+    if (this.hoveredTheme === key)
+      return
     this.hoveredTheme = key
     this.updateSelection()
   }
@@ -118,7 +124,8 @@ export default class ColorDock {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Controller Themes / S2', expanded: false })
     for (const theme of this.themes) {
       const folder = this.folder.addFolder({ title: theme.label, expanded: false })

@@ -2,10 +2,10 @@ import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import * as THREE from 'three/webgpu'
-import ExhibitLabel from '../src/js/World/Environment/ExhibitLabel.js'
-import ThemeLabel from '../src/js/World/Environment/ThemeLabel.js'
 import ColorDock from '../src/js/World/Environment/ColorDock.js'
+import ExhibitLabel from '../src/js/World/Environment/ExhibitLabel.js'
 import { exhibitLabelLayout, getLabelImageSize, getLabelLayout, labelAssetKeys, themeLabelPresets } from '../src/js/World/Environment/exhibitLabelLayout.js'
+import ThemeLabel from '../src/js/World/Environment/ThemeLabel.js'
 
 const publicRoot = new URL(process.argv.includes('--dist') ? '../dist/labels/' : '../public/labels/', import.meta.url)
 const manifest = JSON.parse(await readFile(new URL('manifest.json', publicRoot), 'utf8'))
@@ -23,7 +23,7 @@ for (const asset of manifest.assets) {
   assert.equal(png.readUInt32BE(20), size.height)
 }
 
-const makeTexture = layout => {
+function makeTexture(layout) {
   const size = getLabelImageSize(layout)
   return new THREE.Texture({ width: size.width, height: size.height })
 }
@@ -70,7 +70,7 @@ assert.deepEqual([...variants.map(texture => texture.version), label.material.ve
 const originalDocument = globalThis.document
 let allocations = 0
 try {
-  globalThis.document = { createElement: name => {
+  globalThis.document = { createElement: (name) => {
     assert.equal(name, 'canvas')
     allocations++
     const context = new Proxy({}, { get: (object, key) => object[key] ?? (() => {}) })
@@ -78,7 +78,7 @@ try {
   } }
   themes[1].buttons = '#ff0088'
   label.setPalette(themes)
-  const canvas = label.canvas, custom = label.dynamicTexture
+  const canvas = label.canvas; const custom = label.dynamicTexture
   let disposed = 0
   custom.addEventListener('dispose', () => disposed++)
   assert.equal(label.texture, custom)
@@ -96,8 +96,10 @@ try {
   assert.equal(label.texture.isCanvasTexture, true, '没有选中项时也必须保留无下划线语义')
   label.setSelectedTheme('classic')
   assert.equal(label.canvas, null)
-} finally {
-  if (originalDocument === undefined) delete globalThis.document
+}
+finally {
+  if (originalDocument === undefined)
+    delete globalThis.document
   else globalThis.document = originalDocument
 }
 assert.throws(() => label.setPalette(themes.toReversed()), /原顺序/)

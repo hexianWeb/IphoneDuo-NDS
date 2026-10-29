@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
 
 // 只在独立 Chrome 的响应副本中注入，不修改应用、node_modules 或用户正在查看的页面。
@@ -15,8 +15,10 @@ const output = await mkdtemp(join(tempRoot, `duo-prep-${mode}-`))
 const projectRoot = fileURLToPath(new URL('../', import.meta.url))
 // 可选旧源码快照只替换临时服务响应，用于同轮 A/B，不回退工作区的任何修改。
 const snapshotRoot = process.env.DUO_BUTTON_SNAPSHOT
-const snapshots = snapshotRoot ? await Promise.all(['ButtonPrint.js', 'ControllerButtonMaterial.js']
-  .map(async name => [name, await readFile(join(snapshotRoot, name), 'utf8')])) : []
+const snapshots = snapshotRoot
+  ? await Promise.all(['ButtonPrint.js', 'ControllerButtonMaterial.js']
+      .map(async name => [name, await readFile(join(snapshotRoot, name), 'utf8')]))
+  : []
 const server = await createServer({
   configFile: join(projectRoot, 'vite.config.js'),
   cacheDir: join(output, 'vite-cache'),
@@ -24,13 +26,15 @@ const server = await createServer({
   plugins: [{ name: 'preparation-probe-only', enforce: 'pre', transform(code, id) {
     const path = id.split('?')[0].replaceAll('\\', '/')
     const snapshot = snapshots.find(([name]) => path.endsWith(`/src/js/World/Product/${name}`))
-    if (snapshot) return snapshot[1]
+    if (snapshot)
+      return snapshot[1]
     if (path.endsWith('/src/js/Core/Renderer.js')) {
       const normalized = code.replaceAll('\r\n', '\n')
       const legacy = normalized.includes('this.update()\n      timings.renderSubmitMs')
       assert.ok(legacy || normalized.includes('this.preparation.run('), '未找到实际预热入口')
       let text = normalized.replace('await this.instance.init()', 'await this.instance.init(); window.__DUO_PREP__.attach(this.instance)')
-      if (legacy) text = text.replace('this.update()\n      timings.renderSubmitMs', 'this.update()\n      await window.__DUO_PREP__.drain(this)\n      timings.renderSubmitMs')
+      if (legacy)
+        text = text.replace('this.update()\n      timings.renderSubmitMs', 'this.update()\n      await window.__DUO_PREP__.drain(this)\n      timings.renderSubmitMs')
       assert.notEqual(text, code, '未找到 Renderer 诊断注入位置')
       return text
     }
@@ -41,7 +45,7 @@ const server = await createServer({
     }
     if (mode === 'normal-only' && path.endsWith('/src/js/Core/ScenePipeline.js')) {
       return code.replace('import { RedFormat,', 'import { MeshBasicNodeMaterial, RedFormat,')
-        .replace('this.prePass.transparent = false', "this.prePass.transparent = false; this.prePass.overrideMaterial = new MeshBasicNodeMaterial({name:'NormalOnlyDiagnostic'})")
+        .replace('this.prePass.transparent = false', 'this.prePass.transparent = false; this.prePass.overrideMaterial = new MeshBasicNodeMaterial({name:\'NormalOnlyDiagnostic\'})')
     }
   } }],
 })
@@ -57,15 +61,15 @@ function installProbe(mode) {
     try { return JSON.parse(document.querySelector('.webgl')?.dataset.performance || '{}').phase || probe.lastPhase || 'scene' }
     catch { return 'scene' }
   }
-  const describe = ro => ({ material: ro?.material?.name || ro?.material?.type || '(unnamed)',
-    materialId: ro?.material?.id, object: ro?.object?.name || ro?.object?.type,
-    originalMaterial: ro?.object?.material?.name, pass: probe.pass?.name || 'compileAsync', phase: phase() })
-  const copyDescriptor = value => {
-    if (Array.isArray(value)) return value.map(copyDescriptor)
-    if (!value || Object.prototype.toString.call(value) !== '[object Object]') return value
+  const describe = ro => ({ material: ro?.material?.name || ro?.material?.type || '(unnamed)', materialId: ro?.material?.id, object: ro?.object?.name || ro?.object?.type, originalMaterial: ro?.object?.material?.name, pass: probe.pass?.name || 'compileAsync', phase: phase() })
+  const copyDescriptor = (value) => {
+    if (Array.isArray(value))
+      return value.map(copyDescriptor)
+    if (!value || Object.prototype.toString.call(value) !== '[object Object]')
+      return value
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, copyDescriptor(item)]))
   }
-  probe.attach = renderer => {
+  probe.attach = (renderer) => {
     probe.renderer = renderer
     const backend = renderer.backend
     const device = backend.device
@@ -79,10 +83,9 @@ function installProbe(mode) {
     for (const name of ['createRenderPipeline', 'createRenderPipelineAsync']) {
       const original = device[name]
       device[name] = function (descriptor) {
-        if (!probe.enabled) return original.call(this, descriptor)
-        const record = { ...describe(probe.current), label: descriptor.label, method: name, start: now(),
-          samples: descriptor.multisample?.count || 1, formats: descriptor.fragment?.targets?.map(t => t.format),
-          vertexCode: modules.get(descriptor.vertex?.module), fragmentCode: modules.get(descriptor.fragment?.module) }
+        if (!probe.enabled)
+          return original.call(this, descriptor)
+        const record = { ...describe(probe.current), label: descriptor.label, method: name, start: now(), samples: descriptor.multisample?.count || 1, formats: descriptor.fragment?.targets?.map(t => t.format), vertexCode: modules.get(descriptor.vertex?.module), fragmentCode: modules.get(descriptor.fragment?.module) }
         probe.pipelines.push(record)
         let result
         if (mode === 'serial' && name.endsWith('Async')) {
@@ -94,9 +97,13 @@ function installProbe(mode) {
             finally { record.serviceMs = now() - record.serviceStart }
           })
           probe.serialTail = result.catch(() => {})
-        } else result = original.call(this, descriptor)
+        }
+        else {
+          result = original.call(this, descriptor)
+        }
         record.callMs = now() - record.start
-        if (name.endsWith('Async')) result.then(() => { record.readyMs = now() - record.start }, error => { record.error = String(error) })
+        if (name.endsWith('Async'))
+          result.then(() => { record.readyMs = now() - record.start }, (error) => { record.error = String(error) })
         return result
       }
     }
@@ -123,7 +130,8 @@ function installProbe(mode) {
       for (const name of ['build', 'buildAsync']) {
         const original = builder[name]
         builder[name] = function (...args) {
-          if (!probe.enabled) return original.apply(this, args)
+          if (!probe.enabled)
+            return original.apply(this, args)
           const record = { ...describe(ro), method: name, start: now() }
           probe.builders.push(record)
           const complete = () => {
@@ -132,7 +140,8 @@ function installProbe(mode) {
             record.fragmentBytes = this.fragmentShader?.length || 0
           }
           const result = original.apply(this, args)
-          if (result?.then) return result.finally(complete)
+          if (result?.then)
+            return result.finally(complete)
           complete()
           return result
         }
@@ -142,16 +151,17 @@ function installProbe(mode) {
     backend.createProgram = function (program) {
       const start = now()
       const result = createProgram.call(this, program)
-      if (probe.enabled) probe.programs.push({ ...describe(probe.current), name: program.name, stage: program.stage,
-        start, ms: now() - start, bytes: program.code?.length || 0 })
+      if (probe.enabled) {
+        probe.programs.push({ ...describe(probe.current), name: program.name, stage: program.stage, start, ms: now() - start, bytes: program.code?.length || 0 })
+      }
       return result
     }
     const render = renderer.render
     renderer.render = function (scene, camera) {
-      if (!probe.enabled) return render.call(this, scene, camera)
+      if (!probe.enabled)
+        return render.call(this, scene, camera)
       const previous = probe.pass
-      const record = { name: scene.name || scene.type, target: this.getRenderTarget()?.texture?.name || 'Canvas', phase: phase(),
-        start: now(), childMs: 0, childDraws: 0, depth: previous ? previous.depth + 1 : 0 }
+      const record = { name: scene.name || scene.type, target: this.getRenderTarget()?.texture?.name || 'Canvas', phase: phase(), start: now(), childMs: 0, childDraws: 0, depth: previous ? previous.depth + 1 : 0 }
       const before = this.info.render.drawCalls
       probe.pass = record
       try { return render.call(this, scene, camera) }
@@ -165,70 +175,90 @@ function installProbe(mode) {
         probe.renders.push(record)
         if (record.phase.startsWith('warmup')) {
           record.fenceStart = now()
-          device.queue.onSubmittedWorkDone().then(() => { record.fenceReady = now(); record.fenceMs = record.fenceReady - record.fenceStart }, error => { record.error = String(error) })
+          device.queue.onSubmittedWorkDone().then(() => { record.fenceReady = now(); record.fenceMs = record.fenceReady - record.fenceStart }, (error) => { record.error = String(error) })
         }
       }
     }
     device.addEventListener('uncapturederror', event => probe.errors.push(String(event.error)))
   }
-  probe.configure = wrapper => {
-    if (probe.configured) return
+  probe.configure = (wrapper) => {
+    if (probe.configured)
+      return
     probe.configured = true
-    if (mode === 'no-backdrop') wrapper.transmissionBackdrop.capture = () => {}
-    if (mode === 'no-ao') wrapper.pipeline.params.enabled = false
-    if (mode === 'simple-plastic') wrapper.scene.traverse(object => {
-      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-        if (material?.name !== 'Controller_Shell_Procedural_Plastic') continue
-        material.normalNode = null
-        material.colorNode = null
-        material.roughnessNode = null
-        material.needsUpdate = true
-      }
-    })
-    if (mode === 'simple-buttons') wrapper.scene.traverse(object => {
-      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-        if (!material || !/Button_Plastic|Coated_Plastic/.test(material.name)) continue
-        material.clearcoat = 0
-        material.clearcoatNode = null
-        material.clearcoatNormalNode = null
-        material.clearcoatRoughnessNode = null
-        material.normalNode = null
-        material.roughnessNode = null
-        material.needsUpdate = true
-      }
-    })
+    if (mode === 'no-backdrop')
+      wrapper.transmissionBackdrop.capture = () => {}
+    if (mode === 'no-ao')
+      wrapper.pipeline.params.enabled = false
+    if (mode === 'simple-plastic') {
+      wrapper.scene.traverse((object) => {
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+          if (material?.name !== 'Controller_Shell_Procedural_Plastic')
+            continue
+          material.normalNode = null
+          material.colorNode = null
+          material.roughnessNode = null
+          material.needsUpdate = true
+        }
+      })
+    }
+    if (mode === 'simple-buttons') {
+      wrapper.scene.traverse((object) => {
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+          if (!material || !/Button_Plastic|Coated_Plastic/.test(material.name))
+            continue
+          material.clearcoat = 0
+          material.clearcoatNode = null
+          material.clearcoatNormalNode = null
+          material.clearcoatRoughnessNode = null
+          material.normalNode = null
+          material.roughnessNode = null
+          material.needsUpdate = true
+        }
+      })
+    }
   }
-  probe.drain = async wrapper => {
-    if (mode !== 'async' && mode !== 'serial') return
+  probe.drain = async (wrapper) => {
+    if (mode !== 'async' && mode !== 'serial')
+      return
     for (let i = 0; probe.pending.length && i < 8; i++) {
       await Promise.all(probe.pending.splice(0))
       await new Promise(resolve => requestAnimationFrame(resolve))
       wrapper.shadowTracker.invalidated = true
       wrapper.update()
     }
-    if (probe.pending.length) throw new Error('异步诊断管线未收敛')
+    if (probe.pending.length)
+      throw new Error('异步诊断管线未收敛')
   }
   window.__DUO_PREP__ = probe
 }
 
 const chrome = spawn(chromePath, [
-  '--headless=new', '--enable-unsafe-webgpu', '--ignore-gpu-blocklist', '--no-first-run', '--no-default-browser-check',
-  '--remote-debugging-port=0', `--user-data-dir=${join(output, 'profile')}`, 'about:blank',
+  '--headless=new',
+  '--enable-unsafe-webgpu',
+  '--ignore-gpu-blocklist',
+  '--no-first-run',
+  '--no-default-browser-check',
+  '--remote-debugging-port=0',
+  `--user-data-dir=${join(output, 'profile')}`,
+  'about:blank',
 ], { stdio: 'ignore', windowsHide: true })
 let socket
 let nextId = 0
 const pending = new Map()
 const errors = []
 const networkErrors = []
-const send = (method, params = {}) => new Promise((resolve, reject) => {
-  const id = ++nextId
-  const timeout = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 120000)
-  pending.set(id, { resolve, reject, timeout })
-  socket.send(JSON.stringify({ id, method, params }))
-})
-const evaluate = async expression => {
+function send(method, params = {}) {
+  return new Promise((resolve, reject) => {
+    const id = ++nextId
+    const timeout = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 120000)
+    pending.set(id, { resolve, reject, timeout })
+    socket.send(JSON.stringify({ id, method, params }))
+  })
+}
+async function evaluate(expression) {
   const response = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
-  if (response.exceptionDetails) throw new Error(JSON.stringify(response.exceptionDetails))
+  if (response.exceptionDetails)
+    throw new Error(JSON.stringify(response.exceptionDetails))
   return response.result.value
 }
 try {
@@ -237,8 +267,10 @@ try {
     try {
       const port = (await readFile(join(output, 'profile/DevToolsActivePort'), 'utf8')).split('\n')[0].trim()
       target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find(page => page.type === 'page')
-      if (target) break
-    } catch {}
+      if (target)
+        break
+    }
+    catch {}
     await delay(300)
   }
   assert.ok(target, 'Chrome CDP 未启动')
@@ -251,18 +283,26 @@ try {
     const event = JSON.parse(data)
     if (event.id) {
       const item = pending.get(event.id)
-      if (!item) return
+      if (!item)
+        return
       clearTimeout(item.timeout)
       pending.delete(event.id)
-      if (event.error) item.reject(new Error(JSON.stringify(event.error)))
+      if (event.error)
+        item.reject(new Error(JSON.stringify(event.error)))
       else item.resolve(event.result)
-    } else if (event.method === 'Runtime.exceptionThrown') errors.push(event.params.exceptionDetails)
+    }
+    else if (event.method === 'Runtime.exceptionThrown') {
+      errors.push(event.params.exceptionDetails)
+    }
     else if (event.method === 'Log.entryAdded' && event.params.entry.level === 'error') {
       const entry = event.params.entry
-      if (entry.source === 'network') networkErrors.push({ text: entry.text, url: entry.url })
+      if (entry.source === 'network')
+        networkErrors.push({ text: entry.text, url: entry.url })
       else errors.push(entry.text)
     }
-    else if (event.method === 'Runtime.consoleAPICalled' && event.params.type === 'error') errors.push(event.params.args.map(a => a.value || a.description))
+    else if (event.method === 'Runtime.consoleAPICalled' && event.params.type === 'error') {
+      errors.push(event.params.args.map(a => a.value || a.description))
+    }
   })
   await send('Runtime.enable')
   await send('Page.enable')
@@ -282,7 +322,8 @@ try {
       await send('Page.reload', { ignoreCache: true })
       continue
     }
-    if (status.state === 'error' || errors.length) throw new Error(JSON.stringify({ status, errors }))
+    if (status.state === 'error' || errors.length)
+      throw new Error(JSON.stringify({ status, errors }))
     if (i >= 25 && !reloadedBeforeInit && await evaluate(`!document.querySelector('.webgl')?.dataset.performance && (window.__DUO_PREP__?.builders.length ?? 0) === 0`)) {
       reloadedBeforeInit = true
       await send('Page.reload', { ignoreCache: true })
@@ -311,7 +352,8 @@ try {
     for (const stage of ['vertex', 'fragment']) {
       const code = p[`${stage}Code`]
       p[`${stage}Bytes`] = code?.length || 0
-      if (code) await writeFile(join(output, 'shaders', `${i}-${stage}.wgsl`), code)
+      if (code)
+        await writeFile(join(output, 'shaders', `${i}-${stage}.wgsl`), code)
       delete p[`${stage}Code`]
     }
   }
@@ -323,30 +365,23 @@ try {
     const groups = new Map()
     for (const item of items) {
       const name = key(item)
-      if (!groups.has(name)) groups.set(name, { name, count: 0, totalMs: 0, maxMs: 0, fragmentBytes: 0 })
-      const g = groups.get(name), ms = value(item) || 0
+      if (!groups.has(name))
+        groups.set(name, { name, count: 0, totalMs: 0, maxMs: 0, fragmentBytes: 0 })
+      const g = groups.get(name); const ms = value(item) || 0
       g.count++; g.totalMs += ms; g.maxMs = Math.max(g.maxMs, ms); g.fragmentBytes += item.fragmentBytes || 0
     }
     return [...groups.values()].sort((a, b) => b.totalMs - a.totalMs)
   }
-  const summary = { mode, output, snapshotRoot, monitor: report.monitor,
-    buildByMaterial: group(report.builders, b => b.material, b => b.ms).slice(0, 20),
-    buildByPass: group(report.builders, b => `${b.phase} / ${b.pass}`, b => b.ms),
-    pipelineByPass: group(report.pipelines, b => `${b.phase} / ${b.pass}`, b => b.callMs),
-    serialByMaterial: group(report.pipelines.filter(p => p.serviceMs !== undefined), b => b.material, b => b.serviceMs),
-    serialByPass: group(report.pipelines.filter(p => p.serviceMs !== undefined), b => `${b.phase} / ${b.pass}`, b => b.serviceMs),
-    slowPipelines: [...report.pipelines].sort((a, b) => (b.readyMs || b.callMs) - (a.readyMs || a.callMs)).slice(0, 20),
-    warmupPasses: report.renders.filter(r => r.phase === 'warmup-phone'), errors, gpuErrors:report.gpuErrors }
+  const summary = { mode, output, snapshotRoot, monitor: report.monitor, buildByMaterial: group(report.builders, b => b.material, b => b.ms).slice(0, 20), buildByPass: group(report.builders, b => `${b.phase} / ${b.pass}`, b => b.ms), pipelineByPass: group(report.pipelines, b => `${b.phase} / ${b.pass}`, b => b.callMs), serialByMaterial: group(report.pipelines.filter(p => p.serviceMs !== undefined), b => b.material, b => b.serviceMs), serialByPass: group(report.pipelines.filter(p => p.serviceMs !== undefined), b => `${b.phase} / ${b.pass}`, b => b.serviceMs), slowPipelines: [...report.pipelines].sort((a, b) => (b.readyMs || b.callMs) - (a.readyMs || a.callMs)).slice(0, 20), warmupPasses: report.renders.filter(r => r.phase === 'warmup-phone'), errors, gpuErrors: report.gpuErrors }
   await writeFile(join(output, 'summary.json'), JSON.stringify(summary, null, 2))
-  console.log(JSON.stringify({ mode, output, loadMs:report.monitor.loadMs, warmups:report.monitor.warmups,
-    coldPasses:summary.pipelineByPass.filter(p => p.name.startsWith('warmup-phone')).map(p => ({name:p.name,pipelines:p.count,fragmentKB:Math.round(p.fragmentBytes / 1000)})),
-    serialByMaterial:summary.serialByMaterial.slice(0, 12), serialByPass:summary.serialByPass,
-    errors, gpuErrors:report.gpuErrors }, null, 2))
+  console.log(JSON.stringify({ mode, output, loadMs: report.monitor.loadMs, warmups: report.monitor.warmups, coldPasses: summary.pipelineByPass.filter(p => p.name.startsWith('warmup-phone')).map(p => ({ name: p.name, pipelines: p.count, fragmentKB: Math.round(p.fragmentBytes / 1000) })), serialByMaterial: summary.serialByMaterial.slice(0, 12), serialByPass: summary.serialByPass, errors, gpuErrors: report.gpuErrors }, null, 2))
   assert.equal(report.gpuErrors.length, 0)
   assert.equal(errors.length, 0)
-} finally {
+}
+finally {
   if (socket?.readyState === 1) {
-    try { await send('Browser.close') } catch {}
+    try { await send('Browser.close') }
+    catch {}
     socket.close()
   }
   chrome.kill()

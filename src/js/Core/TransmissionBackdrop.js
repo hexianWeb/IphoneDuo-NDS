@@ -1,5 +1,5 @@
-import * as THREE from 'three/webgpu'
 import { texture } from 'three/tsl'
+import * as THREE from 'three/webgpu'
 
 // 适配上游 transmissionBackdrop.js：由 Renderer 显式持有，背景沿用场景，关闭时不做离屏绘制。
 export default class TransmissionBackdrop {
@@ -15,8 +15,10 @@ export default class TransmissionBackdrop {
 
   createTarget(name) {
     const target = new THREE.RenderTarget(1, 1, {
-      type: THREE.HalfFloatType, minFilter: THREE.LinearMipmapLinearFilter,
-      magFilter: THREE.LinearFilter, generateMipmaps: true,
+      type: THREE.HalfFloatType,
+      minFilter: THREE.LinearMipmapLinearFilter,
+      magFilter: THREE.LinearFilter,
+      generateMipmaps: true,
     })
     target.texture.name = name
     return target
@@ -37,7 +39,8 @@ export default class TransmissionBackdrop {
     this.entries.add(entry)
     return () => {
       this.entries.delete(entry)
-      if (!this.entries.size) this.disposeTargets()
+      if (!this.entries.size)
+        this.disposeTargets()
     }
   }
 
@@ -51,12 +54,17 @@ export default class TransmissionBackdrop {
 
   capture() {
     const visible = [...this.entries].filter(({ mesh }) => {
-      for (let node = mesh; node; node = node.parent) if (!node.visible) return false
+      for (let node = mesh; node; node = node.parent) {
+        if (!node.visible)
+          return false
+      }
       return true
     })
-    if (!visible.length) return
+    if (!visible.length)
+      return
     this.getTextureNode()
-    if (this.params.backside && !this.backsideTarget) this.backsideTarget = this.createTarget('Glass_Backside_Backdrop')
+    if (this.params.backside && !this.backsideTarget)
+      this.backsideTarget = this.createTarget('Glass_Backside_Backdrop')
     if (!this.params.backside && this.backsideTarget) {
       this.textureNode.value = this.cleanTarget.texture
       this.backsideTarget.dispose()
@@ -65,13 +73,16 @@ export default class TransmissionBackdrop {
     this.resize()
     const renderer = this.renderer
     const previous = {
-      target: renderer.getRenderTarget(), autoClear: renderer.autoClear,
-      toneMapping: renderer.toneMapping, exposure: renderer.toneMappingExposure,
+      target: renderer.getRenderTarget(),
+      autoClear: renderer.autoClear,
+      toneMapping: renderer.toneMapping,
+      exposure: renderer.toneMappingExposure,
     }
     const objects = new Map()
     const materials = new Map()
     const hide = (object) => {
-      if (!objects.has(object)) objects.set(object, object.visible)
+      if (!objects.has(object))
+        objects.set(object, object.visible)
       object.visible = false
     }
     try {
@@ -84,7 +95,8 @@ export default class TransmissionBackdrop {
       // 同帧会按两种尺寸重建该纹理，已编码命令引用的旧纹理被销毁并触发 WebGPU 校验错误。
       this.scene.traverseVisible((object) => {
         const material = object.material
-        if (material && !material.isTransmissionGlassMaterial && (material.transmission > 0 || material.transmissionNode)) hide(object)
+        if (material && !material.isTransmissionGlassMaterial && (material.transmission > 0 || material.transmissionNode))
+          hide(object)
       })
       renderer.toneMapping = THREE.NoToneMapping
       renderer.toneMappingExposure = 1

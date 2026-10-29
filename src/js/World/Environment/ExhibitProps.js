@@ -1,8 +1,8 @@
 import * as THREE from 'three/webgpu'
-import ExhibitLabel from './ExhibitLabel.js'
 import { createPlinthGeometry } from './exhibitionGeometry.js'
-import { createGameCard } from './gameCard.js'
+import ExhibitLabel from './ExhibitLabel.js'
 import { exhibitLabelLayout } from './exhibitLabelLayout.js'
+import { createGameCard } from './gameCard.js'
 
 // 道具以产品宽 W 为局部单位，挂在展区而非产品 Rig；标签不参与屏幕命中或模拟器更新。
 export default class ExhibitProps {
@@ -12,9 +12,14 @@ export default class ExhibitProps {
     this.cardCoverTexture.colorSpace = THREE.SRGBColorSpace
     this.cardCoverTexture.anisotropy = 8
     this.params = {
-      showPlaque: true, showCard: true,
-      plaqueX: -0.96, plaqueZ: 0.66, plaqueYaw: 8,
-      cardX: 0.94, cardZ: 0.64, cardYaw: -18,
+      showPlaque: true,
+      showCard: true,
+      plaqueX: -0.96,
+      plaqueZ: 0.66,
+      plaqueYaw: 8,
+      cardX: 0.94,
+      cardZ: 0.64,
+      cardYaw: -18,
     }
     this.group = new THREE.Group()
     this.group.name = 'ExhibitProps'
@@ -92,7 +97,8 @@ export default class ExhibitProps {
   }
 
   applyLayout() {
-    if (!this.layout) return
+    if (!this.layout)
+      return
     const { width: w, depth: d, centerX, centerZ, floorY } = this.layout
     for (const [prefix, group] of [['plaque', this.plaque], ['card', this.card]]) {
       group.scale.setScalar(w)
@@ -109,7 +115,8 @@ export default class ExhibitProps {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Exhibit Props / S3', expanded: false })
     for (const key of ['showPlaque', 'showCard']) {
       this.folder.addBinding(this.params, key).on('change', () => this.setCompact(this.compact))

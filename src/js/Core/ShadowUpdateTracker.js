@@ -81,7 +81,8 @@ export default class ShadowUpdateTracker {
         const texture = material[key]
         write(record, texture)
         write(record, texture?.version)
-        if (!texture) continue
+        if (!texture)
+          continue
         write(record, texture.channel)
         write(record, texture.flipY)
         for (const element of texture.matrix.elements) write(record, element)
@@ -120,12 +121,14 @@ export default class ShadowUpdateTracker {
     this.visibleCasters.clear()
     this.visibleLights.clear()
     let castersChanged = this.invalidated
-    this.scene.traverseVisible(object => {
+    this.scene.traverseVisible((object) => {
       if (object.isMesh && object.castShadow) {
         this.visibleCasters.add(object)
-        if (this.casterChanged(object)) castersChanged = true
+        if (this.casterChanged(object))
+          castersChanged = true
       }
-      if (object.isLight && object.castShadow && object.shadow) this.visibleLights.add(object)
+      if (object.isLight && object.castShadow && object.shadow)
+        this.visibleLights.add(object)
     })
     for (const object of this.casters.keys()) {
       if (!this.visibleCasters.has(object)) {
@@ -150,7 +153,8 @@ export default class ShadowUpdateTracker {
       const needsUpdate = !this.params.enabled || castersChanged || changed || !light.shadow.map || light.shadow.needsUpdate
       light.shadow.autoUpdate = this.params.enabled ? false : record.originalAutoUpdate
       light.shadow.needsUpdate = needsUpdate
-      if (needsUpdate) updates++
+      if (needsUpdate)
+        updates++
     }
     this.invalidated = false
     this.stats.frames++
@@ -181,7 +185,8 @@ export default class ShadowUpdateTracker {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Shadow cache', expanded: false })
     this.folder.addBinding(this.params, 'enabled', { label: 'Enabled' }).on('change', () => { this.invalidated = true })
     for (const key of ['updates', 'skipped', 'casters']) this.folder.addBinding(this.stats, key, { readonly: true })

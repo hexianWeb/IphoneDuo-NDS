@@ -12,7 +12,8 @@ export default class ButtonClickSound {
   }
 
   getContext() {
-    if (this.context) return this.context
+    if (this.context)
+      return this.context
     this.context = new AudioContext({ latencyHint: 'interactive' })
     this.output = this.context.createGain()
     this.output.gain.value = this.volume
@@ -27,18 +28,21 @@ export default class ButtonClickSound {
 
   setVolume(volume) {
     this.volume = volume
-    if (this.output) this.output.gain.value = volume
+    if (this.output)
+      this.output.gain.value = volume
   }
 
   play(kind, pressed) {
-    if (!this.enabled || this.volume <= 0 || this.destroyed) return
+    if (!this.enabled || this.volume <= 0 || this.destroyed)
+      return
     const context = this.getContext()
     if (context.state !== 'running') {
       // 键盘按下处于用户激活栈中，resume 会立即生效；手柄输入没有激活权限，
       // 此时排队的节点会在之后一次性爆发，宁可丢弃这一声。
       const canStart = navigator.userActivation?.isActive
       context.resume().catch(() => {})
-      if (!canStart) return
+      if (!canStart)
+        return
     }
 
     const voice = VOICES[kind]

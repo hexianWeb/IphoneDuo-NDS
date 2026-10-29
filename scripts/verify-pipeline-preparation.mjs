@@ -11,9 +11,11 @@ function fixture({ immediate = false, queue = () => Promise.resolve(), maxPasses
     isWebGPUBackend = true
     device = { queue: { onSubmittedWorkDone: () => { queueCalls++; return queue() } } }
     get(pipeline) {
-      if (!records.has(pipeline)) records.set(pipeline, {})
+      if (!records.has(pipeline))
+        records.set(pipeline, {})
       return records.get(pipeline)
     }
+
     createRenderPipeline(object, promises) {
       assert.equal(this, backend, '保留 backend 的 this')
       assert.ok(Array.isArray(promises), '真实路径必须请求异步管线')
@@ -21,17 +23,17 @@ function fixture({ immediate = false, queue = () => Promise.resolve(), maxPasses
       let reject
       const promise = new Promise((yes, no) => { resolve = yes; reject = no })
       const record = this.get(object.pipeline)
-      requests.push({ object, resolve: () => { record.pipeline = {}; resolve() }, reject,
-        fail: () => { record.error = true; resolve() } })
+      requests.push({ object, resolve: () => { record.pipeline = {}; resolve() }, reject, fail: () => { record.error = true; resolve() } })
       promises.push(promise)
-      if (immediate) requests.at(-1).resolve()
+      if (immediate)
+        requests.at(-1).resolve()
     }
   }
   const backend = new Backend()
   const renderer = { backend }
   const preparation = new PipelinePreparation(renderer, { ...scheduler, maxPasses })
   const object = name => ({ pipeline: {}, material: { name } })
-  const discover = object => {
+  const discover = (object) => {
     const state = backend.get(object.pipeline)
     if (!state.requested) {
       state.requested = true
@@ -43,7 +45,8 @@ function fixture({ immediate = false, queue = () => Promise.resolve(), maxPasses
 }
 async function until(predicate) {
   for (let i = 0; i < 100; i++) {
-    if (predicate()) return
+    if (predicate())
+      return
     await new Promise(resolve => setTimeout(resolve, 1))
   }
   throw new Error('测试等待超时')
@@ -128,22 +131,29 @@ async function until(predicate) {
 // 等待编译、排队帧或 GPU 队列时销毁：立即退出，迟到 Promise 不得再访问 GPU 或发布就绪。
 for (const stage of ['frame', 'compile', 'queue']) {
   let releaseQueue
-  const f = fixture({ queue: () => new Promise(resolve => { releaseQueue = resolve }) })
+  const f = fixture({ queue: () => new Promise((resolve) => { releaseQueue = resolve }) })
   const object = f.object('cancelled')
   let frames = 0
-  const running = f.preparation.run(() => { frames++; if (stage === 'compile') f.discover(object) })
-  if (stage === 'compile') await until(() => f.requests.length === 1)
-  if (stage === 'queue') await until(() => f.queueCalls() === 1)
+  const running = f.preparation.run(() => {
+    frames++; if (stage === 'compile')
+      f.discover(object)
+  })
+  if (stage === 'compile')
+    await until(() => f.requests.length === 1)
+  if (stage === 'queue')
+    await until(() => f.queueCalls() === 1)
   f.preparation.destroy()
   const result = await running
   assert.equal(result.completed, false)
   const stoppedAt = frames
   f.backend.get = () => { throw new Error('late GPU access') }
-  if (stage === 'compile') f.requests[0].reject(new Error('late compile rejection'))
+  if (stage === 'compile')
+    f.requests[0].reject(new Error('late compile rejection'))
   releaseQueue?.()
   await tick()
   assert.equal(frames, stoppedAt)
-  if (stage === 'frame') assert.equal(frames, 0)
+  if (stage === 'frame')
+    assert.equal(frames, 0)
 }
 
 {

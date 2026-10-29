@@ -1,5 +1,5 @@
-import * as THREE from 'three/webgpu'
 import { float, modelWorldMatrix, positionLocal, uniform } from 'three/tsl'
+import * as THREE from 'three/webgpu'
 import { filteredPlasticNoise, plasticSurfaceNormal } from '../../../shaders/controllerPlastic.js'
 
 // 每次调用创建独立 uniform 和材质；配色样品不能浅复制主机的 NodeMaterial 节点图。
@@ -48,9 +48,7 @@ export function createControllerPlasticMaterial(shell, overrides = {}) {
   const layers = layerPhase.mul(Math.PI * 2).sin().mul(layerVisibility)
   // 高度与视空间位置同量纲；每个实例的模型矩阵补偿尺度，层纹和微法线随实例转动。
   const worldWidth = modelWorldMatrix.element(0).xyz.length().mul(width / scale.x)
-  const height = grain.mul(u.bumpStrength).div(u.grainFrequency)
-    .add(layers.mul(u.printStrength).div(u.printFrequency.mul(Math.PI * 2)))
-    .mul(worldWidth)
+  const height = grain.mul(u.bumpStrength).div(u.grainFrequency).add(layers.mul(u.printStrength).div(u.printFrequency.mul(Math.PI * 2))).mul(worldWidth)
   const original = Array.isArray(shell.material) ? shell.material[0] : shell.material
   const material = new THREE.MeshStandardNodeMaterial({
     metalness: 0,

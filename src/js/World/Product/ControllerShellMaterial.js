@@ -13,7 +13,8 @@ export default class ControllerShellMaterial {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Controller Shell Plastic', expanded: false })
     this.colorBinding = this.folder.addBinding(this.params, 'color', { label: 'Base color' })
       .on('change', ({ value }) => this.uniforms.color.value.set(value))

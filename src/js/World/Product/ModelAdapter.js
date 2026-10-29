@@ -1,10 +1,10 @@
 import * as THREE from 'three/webgpu'
 import Experience from '../../Experience.js'
+import ButtonPrint, { getButtonFrame } from './ButtonPrint.js'
 import ControllerButtonMaterial from './ControllerButtonMaterial.js'
 import ControllerShellMaterial from './ControllerShellMaterial.js'
 import ModelInspector from './ModelInspector.js'
 import ProductRig from './ProductRig.js'
-import ButtonPrint, { getButtonFrame } from './ButtonPrint.js'
 
 const REQUIRED_NODES = {
   phoneRoot: 'PHONE_ROOT',
@@ -48,13 +48,15 @@ export default class ModelAdapter {
     this.productRig.applyInitialPose()
     this.scene.add(this.presentationRoot)
     this.debugInit()
-    if (this.debug.enabled) this.inspector = new ModelInspector({
-      presentationRoot: this.presentationRoot,
-      nodes: {
-        ...this.nodes,
-        ...this.productRig.getInspectableNodes(),
-      },
-    })
+    if (this.debug.enabled) {
+      this.inspector = new ModelInspector({
+        presentationRoot: this.presentationRoot,
+        nodes: {
+          ...this.nodes,
+          ...this.productRig.getInspectableNodes(),
+        },
+      })
+    }
   }
 
   resolveNodes() {
@@ -81,7 +83,8 @@ export default class ModelAdapter {
     this.meshes = []
 
     this.model.traverse((child) => {
-      if (!child.isMesh) return
+      if (!child.isMesh)
+        return
 
       child.castShadow = true
       child.receiveShadow = true
@@ -92,7 +95,8 @@ export default class ModelAdapter {
   configureButtonMaterials() {
     this.buttons = Object.fromEntries(Object.entries(BUTTON_NODES).map(([key, name]) => {
       const node = this.nodes.controllerRoot.getObjectByName(name)
-      if (!node?.isMesh) throw new Error(`Controller 缺少按键 Mesh：${name}`)
+      if (!node?.isMesh)
+        throw new Error(`Controller 缺少按键 Mesh：${name}`)
       return [key, node]
     }))
     this.buttonPrint = new ButtonPrint(this.debug)
@@ -174,7 +178,8 @@ export default class ModelAdapter {
     return {
       shell: this.controllerShellMaterial.uniforms.color.value.clone(),
       buttons: Object.fromEntries(Object.entries(this.buttons).map(([key, button]) => [
-        key, this.controllerButtonMaterial.getColors(button),
+        key,
+        this.controllerButtonMaterial.getColors(button),
       ])),
     }
   }
@@ -289,7 +294,8 @@ export default class ModelAdapter {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const folder = this.debug.ui.addFolder({ title: 'Product Model', expanded: false })
     folder.addBinding(this.params, 'nodeStatus', {
       label: 'Required nodes',
@@ -360,7 +366,8 @@ export default class ModelAdapter {
       meshMaterials.forEach((material) => {
         materials.add(material)
         Object.values(material).forEach((value) => {
-          if (value?.isTexture) textures.add(value)
+          if (value?.isTexture)
+            textures.add(value)
         })
       })
     })

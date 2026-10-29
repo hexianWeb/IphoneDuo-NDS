@@ -5,9 +5,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
-import { DataTexture, FloatType, HalfFloatType, RGBAFormat } from 'three/webgpu'
 import { EXRExporter } from 'three/addons/exporters/EXRExporter.js'
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js'
+import { DataTexture, FloatType, HalfFloatType, RGBAFormat } from 'three/webgpu'
 
 const run = promisify(execFile)
 const projectRoot = fileURLToPath(new URL('../', import.meta.url))
@@ -89,7 +89,8 @@ export function repackGlb({ gltf, binary }, replacements) {
     chunks.push(bytes)
     length += bytes.length
     const padding = (4 - length % 4) % 4
-    if (padding) chunks.push(Buffer.alloc(padding))
+    if (padding)
+      chunks.push(Buffer.alloc(padding))
     length += padding
     return result
   })
@@ -114,7 +115,8 @@ async function optimizeTextures() {
   await run(magick, ['-version'])
   const convert = async (args, input) => {
     const task = run(magick, args, { encoding: 'buffer', maxBuffer: 32 * 1024 * 1024 })
-    if (input) task.child.stdin.end(input)
+    if (input)
+      task.child.stdin.end(input)
     return (await task).stdout
   }
   const manifest = { version: 1, assets: [] }
@@ -124,8 +126,7 @@ async function optimizeTextures() {
     const destination = resolve(projectRoot, 'public', output)
     await mkdir(dirname(destination), { recursive: true })
     await writeFile(destination, bytes)
-    manifest.assets.push({ input, output, inputBytes: original.length, outputBytes: bytes.length,
-      inputSha256: hash(original), outputSha256: hash(bytes), ...metadata })
+    manifest.assets.push({ input, output, inputBytes: original.length, outputBytes: bytes.length, inputSha256: hash(original), outputSha256: hash(bytes), ...metadata })
     console.log(`${input}: ${original.length} -> ${bytes.length} bytes`)
   }
   const lightmapInput = 'lightmaps/Controller_Shell_lightmap.exr'
@@ -144,8 +145,7 @@ async function optimizeTextures() {
     assert.ok(Math.abs(decoded.data[i] - smaller.data[i]) <= Math.max(0.000001, Math.abs(smaller.data[i]) * 0.0011), `EXR 像素或行序不匹配: ${i}`)
   }
   texture.dispose()
-  await save(lightmapInput, 'optimized/lightmaps/controller-shell-1024.exr', encoded,
-    { width: 1024, height: 1024, encoding: 'linear HALF / ZIP, 2x2 area average' })
+  await save(lightmapInput, 'optimized/lightmaps/controller-shell-1024.exr', encoded, { width: 1024, height: 1024, encoding: 'linear HALF / ZIP, 2x2 area average' })
 
   for (const name of ['detail', 'rhyzome_plant']) {
     const input = `glb/${name}.glb`
@@ -178,7 +178,7 @@ async function optimizeTextures() {
     const stdout = await convert([resolve(projectRoot, 'public', picture.input), ...options, '-strip', 'webp:-'])
     await save(picture.input, `optimized/img/${picture.output}.webp`, stdout, { lossless: picture.lossless })
   }
-  await writeFile(resolve(projectRoot, 'public/optimized/manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
+  await writeFile(resolve(projectRoot, 'public/optimized/manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

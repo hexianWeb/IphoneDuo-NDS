@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { access, readFile } from 'node:fs/promises'
-import { FloatType, LinearSRGBColorSpace, Texture } from 'three/webgpu'
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js'
-import { downsampleLightmap, imageSize, parseGlb } from './optimize-textures.mjs'
+import { FloatType, LinearSRGBColorSpace, Texture } from 'three/webgpu'
 import ExhibitLabel from '../src/js/World/Environment/ExhibitLabel.js'
+import { downsampleLightmap, imageSize, parseGlb } from './optimize-textures.mjs'
 
 const root = new URL('../public/', import.meta.url)
 const hash = data => createHash('sha256').update(data).digest('hex')
@@ -46,10 +46,10 @@ for (const asset of manifest.assets) {
   if (asset.output.endsWith('.glb')) {
     const original = parseGlb(input)
     const optimized = parseGlb(output)
-    const omitBinaryLayout = gltf => {
+    const omitBinaryLayout = (gltf) => {
       const copy = structuredClone(gltf)
       delete copy.buffers
-      copy.bufferViews.forEach(view => { delete view.byteOffset; delete view.byteLength })
+      copy.bufferViews.forEach((view) => { delete view.byteOffset; delete view.byteLength })
       return copy
     }
     assert.deepEqual(omitBinaryLayout(optimized.gltf), omitBinaryLayout(original.gltf), '不可改动节点、材质语义、UV 或几何定义')
@@ -61,7 +61,8 @@ for (const asset of manifest.assets) {
         const image = optimized.gltf.images.find(image => image.bufferView === index)
         const size = imageSize(bytes, image.mimeType)
         assert.ok(size.width <= 512 && size.height <= 512)
-      } else {
+      }
+      else {
         assert.deepEqual(bytes, original.binary.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength), '几何字节不可改变')
       }
     })

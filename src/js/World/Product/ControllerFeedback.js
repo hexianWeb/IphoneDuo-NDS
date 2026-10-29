@@ -80,7 +80,8 @@ export default class ControllerFeedback {
     // 再令其指向外壳中心，保证“按下”是压进机身而不是弹出。
     const pressAxis = new THREE.Vector3().setComponent(thinIndex, 1).applyQuaternion(mesh.quaternion)
     const shellCenter = mesh.parent.worldToLocal(shellCenterWorld.clone())
-    if (pressAxis.dot(shellCenter.sub(mesh.position)) < 0) pressAxis.negate()
+    if (pressAxis.dot(shellCenter.sub(mesh.position)) < 0)
+      pressAxis.negate()
     if (!Number.isFinite(extents[thinIndex]) || extents[thinIndex] <= 0) {
       throw new Error(`${mesh.name} 无有效厚度，无法建立按键行程。`)
     }
@@ -102,20 +103,23 @@ export default class ControllerFeedback {
     const next = new Set([...this.inputActions, ...this.testActions])
     // 声音跟随输入边沿而非弹簧触底：触底约晚 40 ms，仍在视听同步容差内，且快速轻点也不会漏声。
     next.forEach((action) => {
-      if (this.activeActions.has(action)) return
+      if (this.activeActions.has(action))
+        return
       const voice = this.getVoice(action)
       this.sound.play(voice, true)
       this.pulse(voice)
     })
     this.activeActions.forEach((action) => {
-      if (!next.has(action)) this.sound.play(this.getVoice(action), false)
+      if (!next.has(action))
+        this.sound.play(this.getVoice(action), false)
     })
     this.activeActions = next
   }
 
   // 只在按下时短促一震：松开也震会让快速连按变成连续嗡鸣。
   pulse(voice) {
-    if (!this.params.hapticEnabled || this.params.hapticStrength <= 0) return
+    if (!this.params.hapticEnabled || this.params.hapticStrength <= 0)
+      return
     const magnitude = this.params.hapticStrength * HAPTIC_SCALE[voice]
     // weak 为高频小马达，提供“咔”的清脆感；strong 低频大马达只给一点重量，保持轻微。
     this.onHaptic?.({
@@ -127,7 +131,8 @@ export default class ControllerFeedback {
   }
 
   getVoice(action) {
-    if (DPAD_ACTIONS.includes(action)) return 'dpad'
+    if (DPAD_ACTIONS.includes(action))
+      return 'dpad'
     return FACE_BUTTONS.includes(action) ? 'face' : 'small'
   }
 
@@ -202,7 +207,8 @@ export default class ControllerFeedback {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Controller Feedback', expanded: false })
     const ranges = {
       pressDepth: ['Press depth (× thickness)', 0, 0.6, 0.01],

@@ -8,31 +8,40 @@ import { createServer } from 'vite'
 // 通过 Chrome DevTools Protocol 验证真实 WebGPU，不引入浏览器测试依赖。
 // 用法：node scripts/verify-exhibition.mjs <Chrome 路径> <已存在的临时目录>
 const [chromePath, tempRoot] = process.argv.slice(2)
-if (!chromePath || !tempRoot) throw new Error('需要 Chrome 可执行文件路径与已存在的临时输出目录')
+if (!chromePath || !tempRoot)
+  throw new Error('需要 Chrome 可执行文件路径与已存在的临时输出目录')
 const output = await mkdtemp(join(tempRoot, 'exhibition-'))
 const server = await createServer({ server: { host: '127.0.0.1', port: 5183, strictPort: true } })
 await server.listen()
 const chrome = spawn(chromePath, [
-  '--headless=new', '--enable-unsafe-webgpu', '--ignore-gpu-blocklist',
-  '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0',
-  `--user-data-dir=${join(output, 'profile')}`, 'about:blank',
+  '--headless=new',
+  '--enable-unsafe-webgpu',
+  '--ignore-gpu-blocklist',
+  '--no-first-run',
+  '--no-default-browser-check',
+  '--remote-debugging-port=0',
+  `--user-data-dir=${join(output, 'profile')}`,
+  'about:blank',
 ], { stdio: 'ignore', windowsHide: true })
 let socket
 const pending = new Map()
 const errors = []
 let requestId = 0
-const send = (method, params = {}) => new Promise((resolve, reject) => {
-  const id = ++requestId
-  const timeout = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 90000)
-  pending.set(id, { resolve, reject, timeout })
-  socket.send(JSON.stringify({ id, method, params }))
-})
-const evaluate = async (expression) => {
+function send(method, params = {}) {
+  return new Promise((resolve, reject) => {
+    const id = ++requestId
+    const timeout = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 90000)
+    pending.set(id, { resolve, reject, timeout })
+    socket.send(JSON.stringify({ id, method, params }))
+  })
+}
+async function evaluate(expression) {
   const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
-  if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails))
+  if (result.exceptionDetails)
+    throw new Error(JSON.stringify(result.exceptionDetails))
   return result.result.value
 }
-const screenshot = async (name) => {
+async function screenshot(name) {
   await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
   const { data } = await send('Page.captureScreenshot', { format: 'png' })
   await writeFile(join(output, `${name}.png`), Buffer.from(data, 'base64'))
@@ -46,7 +55,8 @@ try {
       const port = (await readFile(join(output, 'profile', 'DevToolsActivePort'), 'utf8')).split('\n')[0].trim()
       const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()
       target = targets.find(item => item.type === 'page')
-      if (target) break
+      if (target)
+        break
     }
     catch {}
     await delay(500)
@@ -61,15 +71,23 @@ try {
     const message = JSON.parse(data)
     if (message.id) {
       const item = pending.get(message.id)
-      if (!item) return
+      if (!item)
+        return
       clearTimeout(item.timeout)
       pending.delete(message.id)
-      if (message.error) item.reject(new Error(JSON.stringify(message.error)))
+      if (message.error)
+        item.reject(new Error(JSON.stringify(message.error)))
       else item.resolve(message.result)
     }
-    else if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails)
-    else if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') errors.push(message.params.args)
-    else if (message.method === 'Network.loadingFailed' && !message.params.canceled) console.log('Network failure:', message.params)
+    else if (message.method === 'Runtime.exceptionThrown') {
+      errors.push(message.params.exceptionDetails)
+    }
+    else if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') {
+      errors.push(message.params.args)
+    }
+    else if (message.method === 'Network.loadingFailed' && !message.params.canceled) {
+      console.log('Network failure:', message.params)
+    }
   })
   socket.addEventListener('close', () => {
     for (const item of pending.values()) {
@@ -95,7 +113,8 @@ try {
       window.experience = E.instance
       return true
     })()`)
-    if (ready || errors.length) break
+    if (ready || errors.length)
+      break
     await delay(500)
   }
   if (!ready) {
@@ -276,17 +295,19 @@ try {
   assert.ok(Math.abs(report.tallerTop - report.metrics.supportY) < 1e-5, '底座顶面高度漂移')
   assert.ok(report.matrixError < 1e-12, '装配终点矩阵偏离 GLB')
   assert.equal(report.assembly.sideIntersections, 0, '装配扫掠碰到左右展组')
-  if (report.sidesIntersectPlinth) console.log('Existing side display AABBs overlap plinth; inspect actual meshes visually.')
+  if (report.sidesIntersectPlinth)
+    console.log('Existing side display AABBs overlap plinth; inspect actual meshes visually.')
   assert.equal(report.assembly.plinthIntersections, 0, '装配扫掠碰到底座')
   assert.equal(report.assembly.propIntersections, 0, '装配扫掠碰到 S3 道具')
   assert.ok(report.foldMinimum >= report.metrics.supportY, '折叠时手机穿底座')
   for (const frame of report.framing) {
-    assert.ok(frame.minX >= -1 && frame.maxX <= 1 && frame.minY >= -1 && frame.maxY <= 1, '产品保守包围盒超出机位：' + frame.shot)
+    assert.ok(frame.minX >= -1 && frame.maxX <= 1 && frame.minY >= -1 && frame.maxY <= 1, `产品保守包围盒超出机位：${frame.shot}`)
   }
   for (const check of report.orbitChecks) {
     // 用户已扩大 Orbit 到 ±25° / ±15° / ±35%；记录当前近距离裁切，不擅自收回取景参数。
-    if (check.extent > 1) console.log('Current Orbit crop:', JSON.stringify(check))
-    assert.equal(check.obscured, false, '展品遮挡屏幕：' + check.shot)
+    if (check.extent > 1)
+      console.log('Current Orbit crop:', JSON.stringify(check))
+    assert.equal(check.obscured, false, `展品遮挡屏幕：${check.shot}`)
   }
   const s2 = await evaluate(`(() => {
     const w = experience.world
@@ -420,8 +441,9 @@ try {
   let introFinished = false
   for (let i = 0; i < 30; i++) {
     await delay(500)
-    introFinished = await evaluate("experience.state.introState === 'ready' && !experience.world.cameraDirector.timeline")
-    if (introFinished) break
+    introFinished = await evaluate('experience.state.introState === \'ready\' && !experience.world.cameraDirector.timeline')
+    if (introFinished)
+      break
   }
   assert.equal(introFinished, true, '完整 Replay 未回到 Ready')
   assert.equal(await evaluate('experience.world.exhibition.params.enabled'), true)

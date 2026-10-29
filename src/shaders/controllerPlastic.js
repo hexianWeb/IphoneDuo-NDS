@@ -1,4 +1,4 @@
-import { Fn, float, mx_noise_float, normalView, positionView } from 'three/tsl'
+import { float, Fn, mx_noise_float, normalView, positionView } from 'three/tsl'
 
 // 高频细节小于像素时退回平均材质，避免镜头运动中产生颗粒闪烁。
 export const filteredPlasticNoise = Fn(([coordinate]) => {
@@ -15,7 +15,6 @@ export const plasticSurfaceNormal = Fn(([height]) => {
   const r1 = dy.cross(normalView).toVar()
   const r2 = normalView.cross(dx).toVar()
   const determinant = dx.dot(r1).toVar()
-  const gradient = r1.mul(height.dFdx()).add(r2.mul(height.dFdy()))
-    .mul(determinant.sign()).div(determinant.abs().max(1e-12))
+  const gradient = r1.mul(height.dFdx()).add(r2.mul(height.dFdy())).mul(determinant.sign()).div(determinant.abs().max(1e-12))
   return normalView.sub(gradient).normalize()
 })

@@ -1,8 +1,8 @@
-import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
+import * as THREE from 'three/webgpu'
+import { controllerTransitionColor } from '../../../shaders/screenEffects.js'
 import Experience from '../../Experience.js'
 import { ndsSources } from '../../sources.js'
-import { controllerTransitionColor } from '../../../shaders/screenEffects.js'
 
 const VIEWS = ['home', 'library', 'map', 'controller', 'media']
 const TAB_ORDER = ['home', 'library', 'media']
@@ -11,14 +11,26 @@ const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsof
 const COVER_PITCH = 992
 const COLORS = {
   light: {
-    start: '#d3e8ff', end: '#f9f0ed', ink: '#142944', muted: '#627690',
-    glass: 'rgba(255,255,255,0.75)', strong: '#ffffff', accent: '#086ee8',
-    line: 'rgba(255,255,255,0.9)', shadow: 'rgba(30,50,85,0.18)',
+    start: '#d3e8ff',
+    end: '#f9f0ed',
+    ink: '#142944',
+    muted: '#627690',
+    glass: 'rgba(255,255,255,0.75)',
+    strong: '#ffffff',
+    accent: '#086ee8',
+    line: 'rgba(255,255,255,0.9)',
+    shadow: 'rgba(30,50,85,0.18)',
   },
   dark: {
-    start: '#111d37', end: '#332c4b', ink: '#f7f9ff', muted: '#b6c3da',
-    glass: 'rgba(39,54,84,0.84)', strong: '#435a86', accent: '#a5d0ff',
-    line: 'rgba(255,255,255,0.15)', shadow: 'rgba(0,0,0,0.28)',
+    start: '#111d37',
+    end: '#332c4b',
+    ink: '#f7f9ff',
+    muted: '#b6c3da',
+    glass: 'rgba(39,54,84,0.84)',
+    strong: '#435a86',
+    accent: '#a5d0ff',
+    line: 'rgba(255,255,255,0.15)',
+    shadow: 'rgba(0,0,0,0.28)',
   },
 }
 
@@ -64,7 +76,8 @@ export default class ControllerDisplay {
     this.topCanvas.width = 1400
     this.topCanvas.height = 1000
     this.topContext = this.topCanvas.getContext('2d')
-    if (!this.context || !this.topContext) throw new Error('无法创建 Game Home Canvas 2D Context。')
+    if (!this.context || !this.topContext)
+      throw new Error('无法创建 Game Home Canvas 2D Context。')
 
     this.texture = new THREE.CanvasTexture(this.canvas)
     this.texture.name = 'Controller_Display_UI'
@@ -123,20 +136,26 @@ export default class ControllerDisplay {
   }
 
   get primaryLabel() {
-    if (this.ndsStatus === 'loading') return 'Preparing game…'
-    if (this.hasLoadedGame) return 'Resume game'
+    if (this.ndsStatus === 'loading')
+      return 'Preparing game…'
+    if (this.hasLoadedGame)
+      return 'Resume game'
     return this.hasTestGame ? 'Start demo' : 'Choose game'
   }
 
   get displayStatus() {
-    if (this.ndsStatus === 'loading') return 'Preparing your game…'
-    if (this.ndsStatus === 'error') return this.statusMessage
-    if (this.hasLoadedGame) return 'Session paused · ready to resume'
+    if (this.ndsStatus === 'loading')
+      return 'Preparing your game…'
+    if (this.ndsStatus === 'error')
+      return this.statusMessage
+    if (this.hasLoadedGame)
+      return 'Session paused · ready to resume'
     return this.hasTestGame ? 'Demo ready to start' : 'Choose a local .nds game'
   }
 
   setView(view) {
-    if (!VIEWS.includes(view) || view === this.view) return
+    if (!VIEWS.includes(view) || view === this.view)
+      return
     const direction = this.pageDirection(this.view, view)
     this.beginPageMotion(direction, 460)
     this.coverMotion = null
@@ -149,7 +168,8 @@ export default class ControllerDisplay {
   pageDirection(from, to) {
     const fromTab = TAB_ORDER.indexOf(from)
     const toTab = TAB_ORDER.indexOf(to)
-    if (fromTab >= 0 && toTab >= 0 && fromTab !== toTab) return Math.sign(toTab - fromTab)
+    if (fromTab >= 0 && toTab >= 0 && fromTab !== toTab)
+      return Math.sign(toTab - fromTab)
     return to === 'home' ? -1 : 1
   }
 
@@ -162,12 +182,16 @@ export default class ControllerDisplay {
 
   shiftCover(nextIndex) {
     const count = this.gameCovers.length
-    if (!count) return
+    if (!count)
+      return
     const index = ((nextIndex % count) + count) % count
     let delta = index - this.coverIndex
-    if (delta > count / 2) delta -= count
-    if (delta < -count / 2) delta += count
-    if (delta === 0) return
+    if (delta > count / 2)
+      delta -= count
+    if (delta < -count / 2)
+      delta += count
+    if (delta === 0)
+      return
     this.coverIndex = index
     if (this.pageMotion) {
       this.drawGameHome()
@@ -184,7 +208,8 @@ export default class ControllerDisplay {
   }
 
   ensureMotionBuffers() {
-    if (this.motionFromTop) return
+    if (this.motionFromTop)
+      return
     this.motionFromTop = this.createMotionCanvas(1400, 1000)
     this.motionToTop = this.createMotionCanvas(1400, 1000)
     this.motionFromBottom = this.createMotionCanvas(1024, 1024)
@@ -247,14 +272,19 @@ export default class ControllerDisplay {
     if (this.view === 'home') {
       const column = this.focusIndex % 2
       const row = Math.floor(this.focusIndex / 2)
-      if (direction === 'left' && column === 1) this.focusIndex--
-      if (direction === 'right' && column === 0) this.focusIndex++
-      if (direction === 'up' && row === 1) this.focusIndex -= 2
-      if (direction === 'down' && row === 0) this.focusIndex += 2
+      if (direction === 'left' && column === 1)
+        this.focusIndex--
+      if (direction === 'right' && column === 0)
+        this.focusIndex++
+      if (direction === 'up' && row === 1)
+        this.focusIndex -= 2
+      if (direction === 'down' && row === 0)
+        this.focusIndex += 2
       this.drawGameHome()
       return
     }
-    if (!this.focusables.length) return
+    if (!this.focusables.length)
+      return
     const step = direction === 'down' || direction === 'right' ? 1 : -1
     this.focusIndex = (this.focusIndex + step + this.focusables.length) % this.focusables.length
     this.drawGameHome()
@@ -277,13 +307,15 @@ export default class ControllerDisplay {
         this.coverOffset = 0
         this.coverMotion = null
         this.setView('home')
-        if (index !== 0) this.showUnavailableGame(index)
+        if (index !== 0)
+          this.showUnavailableGame(index)
       }
       return null
     }
     if (action.startsWith('ui:cover:jump:')) {
       const index = Number(action.slice('ui:cover:jump:'.length))
-      if (Number.isInteger(index) && index >= 0 && index < this.gameCovers.length) this.shiftCover(index)
+      if (Number.isInteger(index) && index >= 0 && index < this.gameCovers.length)
+        this.shiftCover(index)
       return null
     }
     if (action.startsWith('ui:tab:')) {
@@ -299,8 +331,10 @@ export default class ControllerDisplay {
       return selected ? this.handleAction(selected) : null
     }
     if (action === 'ui:back') {
-      if (this.ndsStatus === 'loading') return 'back'
-      if (this.view !== 'home') this.setView('home')
+      if (this.ndsStatus === 'loading')
+        return 'back'
+      if (this.view !== 'home')
+        this.setView('home')
       return null
     }
     if (action === 'ui:theme') {
@@ -311,15 +345,19 @@ export default class ControllerDisplay {
     }
     if (action.startsWith('ui:game:play:')) {
       const index = Number(action.slice('ui:game:play:'.length))
-      if (!Number.isInteger(index) || index < 0 || index >= this.gameCovers.length) return null
-      if (index !== 0) return this.showUnavailableGame(index)
+      if (!Number.isInteger(index) || index < 0 || index >= this.gameCovers.length)
+        return null
+      if (index !== 0)
+        return this.showUnavailableGame(index)
       return this.ndsStatus === 'loading' ? null : 'continue'
     }
     if (action === 'continue' || action === 'choose-file') {
-      if (this.coverIndex !== 0) return this.showUnavailableGame(this.coverIndex)
+      if (this.coverIndex !== 0)
+        return this.showUnavailableGame(this.coverIndex)
       return this.ndsStatus === 'loading' ? null : action
     }
-    if (action === 'replay-intro') return action
+    if (action === 'replay-intro')
+      return action
     return undefined
   }
 
@@ -352,19 +390,20 @@ export default class ControllerDisplay {
   }
 
   label(context, value, x, y, size, weight = 500, color = this.colors.ink, maxWidth) {
-    context.font = weight + ' ' + size + 'px ' + FONT
+    context.font = `${weight} ${size}px ${FONT}`
     context.textAlign = 'left'
     context.fillStyle = color
     context.fillText(String(value), x, y, maxWidth)
   }
 
   short(context, value, width, size, weight = 700) {
-    context.font = weight + ' ' + size + 'px ' + FONT
+    context.font = `${weight} ${size}px ${FONT}`
     const source = String(value)
-    if (context.measureText(source).width <= width) return source
+    if (context.measureText(source).width <= width)
+      return source
     let length = source.length
-    while (length && context.measureText(source.slice(0, length) + '…').width > width) length--
-    return source.slice(0, length) + '…'
+    while (length && context.measureText(`${source.slice(0, length)}…`).width > width) length--
+    return `${source.slice(0, length)}…`
   }
 
   backdrop(context, width, height) {
@@ -407,8 +446,7 @@ export default class ControllerDisplay {
     sky.addColorStop(1, '#f49a88')
     context.fillStyle = sky
     context.fillRect(x, y, width, height)
-    const glow = context.createRadialGradient(x + width * 0.78, y + height * 0.36, 1,
-      x + width * 0.78, y + height * 0.36, width * 0.38)
+    const glow = context.createRadialGradient(x + width * 0.78, y + height * 0.36, 1, x + width * 0.78, y + height * 0.36, width * 0.38)
     glow.addColorStop(0, 'rgba(255,232,193,0.95)')
     glow.addColorStop(0.45, 'rgba(255,178,146,0.65)')
     glow.addColorStop(1, 'rgba(255,178,146,0)')
@@ -425,8 +463,7 @@ export default class ControllerDisplay {
       context.moveTo(x, y + height)
       context.lineTo(x, base)
       for (let step = 0; step <= 10; step++) {
-        context.lineTo(x + step * width / 10,
-          base - Math.sin(step * 1.5 + layer) * height * (0.07 + layer * 0.008))
+        context.lineTo(x + step * width / 10, base - Math.sin(step * 1.5 + layer) * height * (0.07 + layer * 0.008))
       }
       context.lineTo(x + width, y + height)
       context.fill()
@@ -434,8 +471,7 @@ export default class ControllerDisplay {
     context.fillStyle = 'rgba(255,255,255,0.8)'
     for (let index = 0; index < 24; index++) {
       context.beginPath()
-      context.arc(x + width * ((index * 0.217 + 0.1) % 1),
-        y + height * ((index * 0.383 + 0.07) % 0.56), index % 5 ? 1.5 : 2.5, 0, Math.PI * 2)
+      context.arc(x + width * ((index * 0.217 + 0.1) % 1), y + height * ((index * 0.383 + 0.07) % 0.56), index % 5 ? 1.5 : 2.5, 0, Math.PI * 2)
       context.fill()
     }
     const shade = context.createLinearGradient(x, y, x + width * 0.8, y)
@@ -484,25 +520,26 @@ export default class ControllerDisplay {
   }
 
   button(context, x, y, width, height, text, action, style = 'white') {
-    if (this.ndsStatus === 'loading' && (action === 'continue' || action === 'choose-file')) return
-    this.round(context, x, y, width, height, height / 2,
-      style === 'blue' ? '#1679e9' : this.colors.strong)
-    this.label(context, text + '  ›', x + 31, y + height * 0.67, 27, 750,
-      style === 'blue' ? '#ffffff' : (this.theme === 'light' ? '#174071' : '#ffffff'), width - 55)
-    if (this.focusables.length === this.focusIndex) this.focus(context, x, y, width, height, height / 2)
+    if (this.ndsStatus === 'loading' && (action === 'continue' || action === 'choose-file'))
+      return
+    this.round(context, x, y, width, height, height / 2, style === 'blue' ? '#1679e9' : this.colors.strong)
+    this.label(context, `${text}  ›`, x + 31, y + height * 0.67, 27, 750, style === 'blue' ? '#ffffff' : (this.theme === 'light' ? '#174071' : '#ffffff'), width - 55)
+    if (this.focusables.length === this.focusIndex)
+      this.focus(context, x, y, width, height, height / 2)
     this.focusables.push(action)
     this.region(this.bottomRegions, x, y, width, height, action)
   }
 
   tile(context, x, y, width, height, icon, title, detail, action) {
     this.glass(context, x, y, width, height, 34)
-    this.round(context, x + 23, y + (height - 76) / 2, 76, 76, 22,
-      this.theme === 'light' ? '#deedff' : '#536c97')
+    this.round(context, x + 23, y + (height - 76) / 2, 76, 76, 22, this.theme === 'light' ? '#deedff' : '#536c97')
     this.label(context, icon, x + 45, y + (height - 76) / 2 + 51, 34, 750, this.colors.accent)
     this.label(context, title, x + 120, y + (detail ? 66 : height / 2 + 10), 29, 750)
-    if (detail) this.label(context, detail, x + 120, y + 103, 21, 500, this.colors.muted, width - 167)
+    if (detail)
+      this.label(context, detail, x + 120, y + 103, 21, 500, this.colors.muted, width - 167)
     this.label(context, '›', x + width - 53, y + height / 2 + 13, 42, 500, this.colors.muted)
-    if (this.focusables.length === this.focusIndex) this.focus(context, x, y, width, height, 34)
+    if (this.focusables.length === this.focusIndex)
+      this.focus(context, x, y, width, height, 34)
     this.focusables.push(action)
     this.region(this.bottomRegions, x, y, width, height, action)
   }
@@ -543,7 +580,7 @@ export default class ControllerDisplay {
   }
 
   spacedLabel(context, value, x, y, size, tracking, color) {
-    context.font = '600 ' + size + 'px ' + FONT
+    context.font = `600 ${size}px ${FONT}`
     context.fillStyle = color
     context.textAlign = 'left'
     let cursor = x
@@ -578,9 +615,12 @@ export default class ControllerDisplay {
     context.beginPath()
     context.moveTo(x, y + height * 0.16)
     context.bezierCurveTo(
-      x + width * 0.45, y + height * 0.66,
-      x + width * 0.68, y + height * 0.79,
-      x + width, y + height * 0.3,
+      x + width * 0.45,
+      y + height * 0.66,
+      x + width * 0.68,
+      y + height * 0.79,
+      x + width,
+      y + height * 0.3,
     )
     context.lineTo(x + width, y + height)
     context.lineTo(x, y + height)
@@ -597,10 +637,14 @@ export default class ControllerDisplay {
     const iconColor = active ? '#ffffff' : '#668bd1'
     const centerX = x + width / 2
     const centerY = y + (height > 370 ? 0.39 : 0.38) * height
-    if (icon === 'compass') this.drawCompassIcon(context, centerX, centerY, iconColor)
-    if (icon === 'library') this.drawLibraryIcon(context, centerX, centerY)
-    if (icon === 'map') this.drawMapIcon(context, centerX, centerY)
-    if (icon === 'controller') this.drawControllerIcon(context, centerX, centerY)
+    if (icon === 'compass')
+      this.drawCompassIcon(context, centerX, centerY, iconColor)
+    if (icon === 'library')
+      this.drawLibraryIcon(context, centerX, centerY)
+    if (icon === 'map')
+      this.drawMapIcon(context, centerX, centerY)
+    if (icon === 'controller')
+      this.drawControllerIcon(context, centerX, centerY)
 
     const textColor = active ? '#ffffff' : '#293248'
     const subColor = active ? '#d4eaff' : '#637696'
@@ -701,7 +745,8 @@ export default class ControllerDisplay {
     panels.forEach((points) => {
       context.beginPath()
       points.forEach(([px, py], index) => {
-        if (index === 0) context.moveTo(x + px, y + py)
+        if (index === 0)
+          context.moveTo(x + px, y + py)
         else context.lineTo(x + px, y + py)
       })
       context.closePath()
@@ -760,10 +805,13 @@ export default class ControllerDisplay {
   drawTop() {
     const c = this.topContext
     this.drawTopWallpaper(c)
-    if (this.view === 'home' || this.view === 'media') this.drawTopCarousel(c)
-    else if (this.view === 'library') this.drawTopLibrary(c)
+    if (this.view === 'home' || this.view === 'media')
+      this.drawTopCarousel(c)
+    else if (this.view === 'library')
+      this.drawTopLibrary(c)
     else this.drawTopInfo(c)
-    if (this.view === 'home' || this.view === 'media') this.drawTopDots(c)
+    if (this.view === 'home' || this.view === 'media')
+      this.drawTopDots(c)
     this.drawTopNavigation(c)
   }
 
@@ -780,8 +828,7 @@ export default class ControllerDisplay {
     context.fillRect(0, 0, 1400, 1000)
     // 仅复用参考图的天空和沙丘带，卡片与导航始终由可点击的 Canvas UI 绘制。
     context.drawImage(reference, 0, 0, width, 180, 0, 0, 1400, 180 * scale)
-    context.drawImage(reference, 0, 745, width, height - 745,
-      0, 745 * scale, 1400, (height - 745) * scale)
+    context.drawImage(reference, 0, 745, width, height - 745, 0, 745 * scale, 1400, (height - 745) * scale)
     // 小范围采样沙丘纹理，擦去原图的三颗静态分页点。
     for (const x of [668, 700, 731]) {
       context.drawImage(reference, 620, 762, 26, 28, x - 11, 721, 22, 27)
@@ -802,8 +849,7 @@ export default class ControllerDisplay {
     context.beginPath()
     context.roundRect(x, y, width, height, 39)
     context.clip()
-    context.drawImage(image, x + (width - imageWidth) / 2,
-      y + (height - imageHeight) / 2, imageWidth, imageHeight)
+    context.drawImage(image, x + (width - imageWidth) / 2, y + (height - imageHeight) / 2, imageWidth, imageHeight)
     context.restore()
     context.strokeStyle = 'rgba(255,255,255,0.95)'
     context.lineWidth = 1.5
@@ -844,7 +890,8 @@ export default class ControllerDisplay {
       this.addVisibleRegion(this.topRegions, main.x, 172, 974, 531, this.getCoverAction(main.index), 1400)
     }
     const next = slots.find(item => item.slot === (main?.slot ?? 0) + 1)
-    if (next) this.addVisibleRegion(this.topRegions, next.x, 172, 974, 531, 'ui:cover:next', 1400)
+    if (next)
+      this.addVisibleRegion(this.topRegions, next.x, 172, 974, 531, 'ui:cover:next', 1400)
   }
 
   drawTopLibrary(context) {
@@ -861,13 +908,12 @@ export default class ControllerDisplay {
   drawTopInfo(context) {
     this.glass(context, 88, 172, 1224, 531, 40)
     const isMap = this.view === 'map'
-    if (isMap) this.drawMapIcon(context, 370, 400)
+    if (isMap)
+      this.drawMapIcon(context, 370, 400)
     else this.drawControllerIcon(context, 370, 400)
     this.label(context, isMap ? '游戏地图' : '控制器已就绪', 610, 337, 57, 780)
-    this.label(context, isMap ? '进入游戏后查看当前游戏的地图。' : '方向键选择  ·  Enter 确认',
-      614, 401, 28, 550, this.colors.muted)
-    this.label(context, isMap ? '继续你的双屏冒险。' : 'PageUp / PageDown 切换游戏封面',
-      614, 446, 26, 500, this.colors.muted)
+    this.label(context, isMap ? '进入游戏后查看当前游戏的地图。' : '方向键选择  ·  Enter 确认', 614, 401, 28, 550, this.colors.muted)
+    this.label(context, isMap ? '继续你的双屏冒险。' : 'PageUp / PageDown 切换游戏封面', 614, 446, 26, 500, this.colors.muted)
     this.round(context, 610, 533, 240, 82, 41, '#ffffff')
     this.label(context, isMap ? '继续游戏  ›' : '返回首页  ›', 649, 586, 27, 750, '#174071')
     this.region(this.topRegions, 610, 533, 240, 82, isMap ? 'continue' : 'ui:tab:home')
@@ -972,20 +1018,44 @@ export default class ControllerDisplay {
     this.drawReferenceBackdrop(c)
     if (this.view === 'home') {
       this.drawReferenceTile(c, {
-        x: 54, y: 144, width: 451, height: 393,
-        icon: 'compass', chinese: '继续冒险', english: 'CONTINUE', action: 'continue',
+        x: 54,
+        y: 144,
+        width: 451,
+        height: 393,
+        icon: 'compass',
+        chinese: '继续冒险',
+        english: 'CONTINUE',
+        action: 'continue',
       })
       this.drawReferenceTile(c, {
-        x: 519, y: 144, width: 455, height: 393,
-        icon: 'library', chinese: '收藏库', english: 'LIBRARY', action: 'ui:tab:library',
+        x: 519,
+        y: 144,
+        width: 455,
+        height: 393,
+        icon: 'library',
+        chinese: '收藏库',
+        english: 'LIBRARY',
+        action: 'ui:tab:library',
       })
       this.drawReferenceTile(c, {
-        x: 54, y: 555, width: 451, height: 353,
-        icon: 'map', chinese: '地图', english: 'MAP', action: 'ui:tab:map',
+        x: 54,
+        y: 555,
+        width: 451,
+        height: 353,
+        icon: 'map',
+        chinese: '地图',
+        english: 'MAP',
+        action: 'ui:tab:map',
       })
       this.drawReferenceTile(c, {
-        x: 519, y: 555, width: 455, height: 353,
-        icon: 'controller', chinese: '控制器', english: 'CONTROLLER', action: 'ui:tab:controller',
+        x: 519,
+        y: 555,
+        width: 455,
+        height: 353,
+        icon: 'controller',
+        chinese: '控制器',
+        english: 'CONTROLLER',
+        action: 'ui:tab:controller',
       })
       return
     }
@@ -1005,8 +1075,7 @@ export default class ControllerDisplay {
       this.art(c, 86, 286, 260, 303)
       this.label(c, '当前游戏', 383, 334, 24, 700, this.colors.muted)
       this.label(c, this.short(c, this.gameInfo.title, 520, 40, 760), 383, 398, 40, 760)
-      this.label(c, this.short(c, this.displayStatus, 525, 23, 500),
-        383, 444, 23, 500, this.colors.muted)
+      this.label(c, this.short(c, this.displayStatus, 525, 23, 500), 383, 444, 23, 500, this.colors.muted)
       this.button(c, 383, 492, 307, 81, this.primaryLabel, 'continue', 'blue')
       this.tile(c, 60, 640, 904, 141, '▷', '游戏试玩', '目前仅开放第一款游戏', 'continue')
       this.tile(c, 60, 800, 904, 124, '⌂', '返回主菜单', '', 'ui:tab:home')
@@ -1028,8 +1097,7 @@ export default class ControllerDisplay {
       this.label(c, 'X / Z  ·  S / A', 487, 456, 24, 650, this.colors.muted)
       this.label(c, 'A / B  ·  X / Y', 487, 494, 30, 750)
       this.label(c, 'ENTER 确认    ESC 返回', 487, 577, 22, 650, this.colors.muted)
-      this.tile(c, 60, 719, 438, 203, '◐', '切换主题',
-        this.theme === 'light' ? '日间 · 切至夜间' : '夜间 · 切至日间', 'ui:theme')
+      this.tile(c, 60, 719, 438, 203, '◐', '切换主题', this.theme === 'light' ? '日间 · 切至夜间' : '夜间 · 切至日间', 'ui:theme')
       this.tile(c, 517, 719, 447, 203, '↻', '重播装配', '再次观看产品动画', 'replay-intro')
     }
     if (this.view === 'media') {
@@ -1058,12 +1126,14 @@ export default class ControllerDisplay {
   addVisibleRegion(list, x, y, width, height, action, boundsWidth) {
     const left = Math.max(0, x)
     const right = Math.min(boundsWidth, x + width)
-    if (right - left < 24) return
+    if (right - left < 24)
+      return
     this.region(list, left, y, right - left, height, action)
   }
 
   getActionAtUv(uv, surface = 'bottom') {
-    if (!uv) return null
+    if (!uv)
+      return null
     const top = surface === 'top'
     const texture = top ? this.topTexture : this.texture
     const transformed = texture.transformUv((top ? this.topInteractionUv : this.bottomInteractionUv).copy(uv))
@@ -1076,7 +1146,8 @@ export default class ControllerDisplay {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const folder = this.debug.ui.addFolder({ title: 'Controller Display' })
     const ranges = { brightness: [0, 2, 0.01], blurPixels: [0, 30, 1], scale: [1, 1.12, 0.005] }
     Object.entries(ranges).forEach(([key, [min, max, step]]) => {
@@ -1105,7 +1176,9 @@ export default class ControllerDisplay {
         this.pageMotion = null
         this.drawGameHome()
       }
-      else this.paintPageMotion(this.easeInOutCubic(t))
+      else {
+        this.paintPageMotion(this.easeInOutCubic(t))
+      }
     }
     else if (!redrew) {
       const minute = Math.floor(Date.now() / 60000)
@@ -1114,7 +1187,8 @@ export default class ControllerDisplay {
         this.drawGameHome()
       }
     }
-    if (!this.frameDirty) return
+    if (!this.frameDirty)
+      return
     this.texture.needsUpdate = true
     this.topTexture.needsUpdate = true
     this.frameDirty = false

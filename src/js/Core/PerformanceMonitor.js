@@ -17,7 +17,8 @@ export default class PerformanceMonitor {
 
   setPhase(phase) {
     const now = performance.now()
-    if (this.phase) this.phases[this.phase] = rounded(now - this.phaseStartedAt)
+    if (this.phase)
+      this.phases[this.phase] = rounded(now - this.phaseStartedAt)
     this.phase = phase
     this.phaseStartedAt = now
     this.canvas.dataset.performance = JSON.stringify({ phase, loadingPhasesMs: this.phases })
@@ -45,13 +46,16 @@ export default class PerformanceMonitor {
     const key = this.state.introState === 'ready' ? this.state.productMode : this.state.introState
     const interval = this.previousFrame ? this.frameStartedAt - this.previousFrame : 0
     this.previousFrame = document.hidden ? null : this.frameStartedAt
-    if (document.hidden || interval <= 0 || interval > 1000) return
-    if (!this.samples.has(key)) this.samples.set(key, [])
+    if (document.hidden || interval <= 0 || interval > 1000)
+      return
+    if (!this.samples.has(key))
+      this.samples.set(key, [])
     const samples = this.samples.get(key)
-    samples.push({ interval, update: this.updatedAt - this.frameStartedAt, render: now - this.updatedAt,
-      draws: renderer.instance.info.render.drawCalls, triangles: renderer.instance.info.render.triangles })
-    if (samples.length > 240) samples.shift()
-    if (now - this.lastReport < 1000) return
+    samples.push({ interval, update: this.updatedAt - this.frameStartedAt, render: now - this.updatedAt, draws: renderer.instance.info.render.drawCalls, triangles: renderer.instance.info.render.triangles })
+    if (samples.length > 240)
+      samples.shift()
+    if (now - this.lastReport < 1000)
+      return
     this.lastReport = now
     const phases = Object.fromEntries([...this.samples].map(([name, frames]) => [name, {
       frames: frames.length,
@@ -62,9 +66,7 @@ export default class PerformanceMonitor {
       drawCalls: rounded(mean(frames.map(frame => frame.draws))),
       triangles: rounded(mean(frames.map(frame => frame.triangles))),
     }]))
-    this.canvas.dataset.performance = JSON.stringify({ loadMs: this.loadMs, loadingPhasesMs: this.phases,
-      viewport: { width: renderer.sizes.width, height: renderer.sizes.height, dpr: renderer.instance.getPixelRatio() },
-      phases, warmups: this.warmups, shadows: renderer.shadowTracker?.stats })
+    this.canvas.dataset.performance = JSON.stringify({ loadMs: this.loadMs, loadingPhasesMs: this.phases, viewport: { width: renderer.sizes.width, height: renderer.sizes.height, dpr: renderer.instance.getPixelRatio() }, phases, warmups: this.warmups, shadows: renderer.shadowTracker?.stats })
   }
 
   destroy() {

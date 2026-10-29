@@ -91,10 +91,12 @@ export default class ProductRig {
     const localBounds = new THREE.Box3().makeEmpty()
 
     object.traverse((child) => {
-      if (!child.isMesh || !child.geometry) return
+      if (!child.isMesh || !child.geometry)
+        return
 
       child.geometry.computeBoundingBox()
-      if (!child.geometry.boundingBox) return
+      if (!child.geometry.boundingBox)
+        return
 
       // 将每个子 Mesh 的包围盒变换回 Hinge 局部空间，避免依赖 Blender 世界轴。
       const childToObjectMatrix = inverseObjectMatrix.clone().multiply(child.matrixWorld)
@@ -118,9 +120,11 @@ export default class ProductRig {
     this.standAxis = this.hingeAxis.clone().applyQuaternion(this.hingeBindQuaternion).setY(0)
     // 模型局部 +Y 为展台法线；side 垂直于转轴并指向机身前方（铰链 → 下半部中心）。
     const side = new THREE.Vector3(0, 1, 0).cross(this.standAxis)
-    if (side.lengthSq() < 1e-10) throw new Error('铰链轴接近竖直，无法推导立起转轴。')
+    if (side.lengthSq() < 1e-10)
+      throw new Error('铰链轴接近竖直，无法推导立起转轴。')
     side.normalize()
-    if (side.dot(center.sub(hingeCenter)) < 0) side.negate()
+    if (side.dot(center.sub(hingeCenter)) < 0)
+      side.negate()
     this.standAxis.normalize()
     this.standProfile = this.getStandProfile(side)
     // 转心取剖面前沿与底面的交点；圆角使它不一定落在几何上，真实触点由 setDisplayTilt 的抬升补偿。
@@ -129,7 +133,8 @@ export default class ProductRig {
     this.standPivot = side.multiplyScalar(front).setY(this.standFloorY)
     // 取使铰链升高的旋转方向，不假设 GLB 的轴向正负。
     const lever = hingeCenter.sub(this.standPivot).setY(0)
-    if (lever.clone().applyAxisAngle(this.standAxis, 0.1).y < 0) this.standAxis.negate()
+    if (lever.clone().applyAxisAngle(this.standAxis, 0.1).y < 0)
+      this.standAxis.negate()
     this.standPoint = new THREE.Vector3()
   }
 
@@ -141,7 +146,8 @@ export default class ProductRig {
     const point = new THREE.Vector3()
     const points = []
     this.bottomRig.traverse((child) => {
-      if (!child.isMesh || !child.geometry?.attributes.position) return
+      if (!child.isMesh || !child.geometry?.attributes.position)
+        return
       matrix.multiplyMatrices(inverse, child.matrixWorld)
       const positions = child.geometry.attributes.position
       for (let i = 0; i < positions.count; i++) {
@@ -149,7 +155,8 @@ export default class ProductRig {
         points.push([point.dot(side), point.y])
       }
     })
-    if (points.length < 3) throw new Error('下半部顶点不足，无法建立立起剖面。')
+    if (points.length < 3)
+      throw new Error('下半部顶点不足，无法建立立起剖面。')
     // Andrew monotone chain；cross ≤ 0 时剔除共线点，凸包顶点数通常只有几十到几百。
     points.sort((a, b) => a[0] - b[0] || a[1] - b[1])
     const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
@@ -258,7 +265,8 @@ export default class ProductRig {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const folder = this.debug.ui.addFolder({ title: 'Product Rig', expanded: false })
     folder.addBinding(this.params, 'hingeAxis', {
       label: 'Hinge axis',

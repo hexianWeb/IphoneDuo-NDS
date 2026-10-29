@@ -26,7 +26,7 @@ export default class ProductIntroCopy {
       </ul>`
     this.removeListeners = [
       ...['intro:state', 'product:mode'].map(event => events.on(event, () => this.render())),
-      events.on('nds:state', info => { this.loading = info.loading; this.render() }),
+      events.on('nds:state', (info) => { this.loading = info.loading; this.render() }),
     ]
     document.body.append(this.element)
     this.render()

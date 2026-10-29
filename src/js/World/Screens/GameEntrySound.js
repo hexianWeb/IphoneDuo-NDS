@@ -6,10 +6,12 @@ export default class GameEntrySound {
 
   unlock({ userGesture, enabled }) {
     this.enabled = enabled
-    if (!enabled || this.destroyed) return
+    if (!enabled || this.destroyed)
+      return
     if (!this.context && userGesture && navigator.userActivation?.isActive) {
       // 音频不可用时保留视觉进入流程，不能让可选反馈阻止游戏启动。
-      try { this.context = new AudioContext({ latencyHint: 'interactive' }) } catch { return }
+      try { this.context = new AudioContext({ latencyHint: 'interactive' }) }
+      catch { return }
     }
     if (this.context?.state === 'suspended' && userGesture && navigator.userActivation?.isActive) {
       this.context.resume().catch(() => {})
@@ -18,7 +20,8 @@ export default class GameEntrySound {
 
   play(opening, duration) {
     const context = this.context
-    if (!this.enabled || this.destroyed || !context || context.state !== 'running') return
+    if (!this.enabled || this.destroyed || !context || context.state !== 'running')
+      return
     const start = context.currentTime
     const tones = opening ? [[440, 660, 0], [660, 880, 0.07]] : [[520, 140, 0]]
     for (const [from, to, delay] of tones) {
@@ -44,7 +47,8 @@ export default class GameEntrySound {
 
   stop() {
     for (const voice of this.voices) {
-      try { voice.stop() } catch { /* 已结束的节点无需再次停止。 */ }
+      try { voice.stop() }
+      catch { /* 已结束的节点无需再次停止。 */ }
     }
     this.voices.clear()
   }

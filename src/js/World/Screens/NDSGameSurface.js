@@ -1,7 +1,7 @@
-import * as THREE from 'three/webgpu'
 import { materialColor } from 'three/tsl'
-import { canvasUvToTouch, getContainRect, getPixelCoverRect } from '../../NDS/screenMapping.js'
+import * as THREE from 'three/webgpu'
 import { screenIrisMask } from '../../../shaders/screenEffects.js'
+import { canvasUvToTouch, getContainRect, getPixelCoverRect } from '../../NDS/screenMapping.js'
 
 const FILL_BRIGHTNESS = 0.4
 
@@ -17,14 +17,16 @@ export function getScreenUvAspect(screen) {
     const first = coords[1].sub(coords[0])
     const second = coords[2].sub(coords[0])
     const determinant = first.x * second.y - second.x * first.y
-    if (Math.abs(determinant) < 1e-10) continue
+    if (Math.abs(determinant) < 1e-10)
+      continue
     const edge1 = points[1].sub(points[0])
     const edge2 = points[2].sub(points[0])
     // 用 UV 对世界位置的导数求物理宽高，避开折叠后的世界包围盒与非均匀缩放误差。
     const tangentU = edge1.clone().multiplyScalar(second.y).addScaledVector(edge2, -first.y)
     const tangentV = edge2.clone().multiplyScalar(first.x).addScaledVector(edge1, -second.x)
     const aspect = tangentU.length() / tangentV.length()
-    if (Number.isFinite(aspect) && aspect > 0) return aspect
+    if (Number.isFinite(aspect) && aspect > 0)
+      return aspect
   }
   throw new Error(`${screen.name} 无法推导屏幕 UV 物理比例`)
 }
@@ -37,7 +39,8 @@ export default class NDSGameSurface {
     this.canvas.width = Math.max(1, Math.round(512 * Math.min(this.aspect, 1)))
     this.canvas.height = Math.max(1, Math.round(512 / Math.max(this.aspect, 1)))
     this.context = this.canvas.getContext('2d', { alpha: false })
-    if (!this.context) throw new Error('无法创建 NDS 屏幕适配 Canvas')
+    if (!this.context)
+      throw new Error('无法创建 NDS 屏幕适配 Canvas')
     this.rect = getContainRect(this.canvas.width, this.canvas.height)
     this.pixelRect = getPixelCoverRect(this.canvas.width, this.canvas.height)
 
@@ -60,7 +63,8 @@ export default class NDSGameSurface {
       toneMapped: true,
     })
     this.material.name = `${screen.name}_NDS_Material`
-    if (entryUniforms) this.material.colorNode = materialColor.rgb.mul(screenIrisMask(entryUniforms))
+    if (entryUniforms)
+      this.material.colorNode = materialColor.rgb.mul(screenIrisMask(entryUniforms))
     this.interactionUv = new THREE.Vector2()
   }
 
@@ -85,7 +89,8 @@ export default class NDSGameSurface {
   }
 
   getTouchAtUv(uv) {
-    if (!uv) return null
+    if (!uv)
+      return null
     // 与实际纹理共用 transformUv（含 flipY），再扣除 Canvas 黑边，避免双重旋转。
     const canvasUv = this.texture.transformUv(this.interactionUv.copy(uv))
     return canvasUvToTouch(canvasUv, this.canvas.width, this.canvas.height, this.rect)

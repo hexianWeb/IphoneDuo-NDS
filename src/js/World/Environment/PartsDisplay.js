@@ -1,9 +1,9 @@
-import * as THREE from 'three/webgpu'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
-import ExhibitSample from './ExhibitSample.js'
-import ExhibitLabel from './ExhibitLabel.js'
+import * as THREE from 'three/webgpu'
 import GlassPhysicalNodeMaterial from '../../Materials/Transmission/GlassPhysicalNodeMaterial.js'
+import ExhibitLabel from './ExhibitLabel.js'
 import { exhibitLabelLayout } from './exhibitLabelLayout.js'
+import ExhibitSample from './ExhibitSample.js'
 
 export default class PartsDisplay {
   constructor({ sources, debug, transmissionBackdrop, labelTexture }) {
@@ -52,16 +52,20 @@ export default class PartsDisplay {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Parts Display / S2', expanded: false })
     this.folder.addBinding(this.params, 'boardColor').on('change', ({ value }) => {
       this.boardMaterial.color.set(value)
     })
     const glass = this.folder.addFolder({ title: 'WebGPU transmission' })
     for (const [key, min, max, step] of [
-      ['glassTransmission', 0, 1, 0.01], ['glassRoughness', 0, 0.6, 0.01],
-      ['glassIor', 1, 2, 0.01], ['glassThickness', 0.001, 0.15, 0.001],
-      ['glassDispersion', 0, 10, 0.1], ['glassBlur', 0, 1, 0.01],
+      ['glassTransmission', 0, 1, 0.01],
+      ['glassRoughness', 0, 0.6, 0.01],
+      ['glassIor', 1, 2, 0.01],
+      ['glassThickness', 0.001, 0.15, 0.001],
+      ['glassDispersion', 0, 10, 0.1],
+      ['glassBlur', 0, 1, 0.01],
     ]) glass.addBinding(this.params, key, { min, max, step }).on('change', () => this.boardMaterial.setOptics(this.params))
     glass.addBinding(this.params, 'glassSamples', { options: { Low: 2, Medium: 4, High: 8 } })
       .on('change', ({ value }) => this.boardMaterial.setSamples(value))

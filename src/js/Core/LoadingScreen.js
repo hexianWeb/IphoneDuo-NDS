@@ -32,9 +32,11 @@ export default class LoadingScreen {
   }
 
   setPhase(phase) {
-    if (this.destroyed || this.element.dataset.state !== 'loading') return
+    if (this.destroyed || this.element.dataset.state !== 'loading')
+      return
     const info = PHASES[phase]
-    if (!info) return
+    if (!info)
+      return
     this.title.textContent = info.title
     this.detail.textContent = info.detail
     this.setProgress(info.progress)
@@ -42,17 +44,19 @@ export default class LoadingScreen {
   }
 
   setResources({ loaded, total, progress }) {
-    if (this.destroyed || this.element.dataset.state !== 'loading') return
+    if (this.destroyed || this.element.dataset.state !== 'loading')
+      return
     this.setProgress(8 + (progress ?? loaded / Math.max(1, total)) * 82)
     this.detail.textContent = `${loaded} / ${total} 项资源已就绪`
   }
 
   complete() {
-    if (this.destroyed) return
+    if (this.destroyed)
+      return
     this.setProgress(100)
     this.title.textContent = '准备就绪'
     this.detail.textContent = '欢迎来到 iPhone Duo。'
-    this.steps.forEach(step => { step.dataset.state = 'done' })
+    this.steps.forEach((step) => { step.dataset.state = 'done' })
     this.element.setAttribute('aria-busy', 'false')
     this.element.dataset.state = 'complete'
     // 短加载也保留一次可读的品牌呈现；过渡计时器跟随入口的 HMR 销毁。
@@ -63,7 +67,8 @@ export default class LoadingScreen {
   }
 
   fail(title, detail) {
-    if (this.destroyed) return
+    if (this.destroyed)
+      return
     clearTimeout(this.completeTimer)
     clearTimeout(this.hideTimer)
     this.element.hidden = false

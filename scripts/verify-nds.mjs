@@ -6,11 +6,12 @@ import factory from '../public/vendor/pilas-melonds/pilas-melonds-core.js'
 import NDSRuntime from '../src/js/NDS/NDSRuntime.js'
 
 const romPath = process.argv[2]
-if (!romPath) throw new Error('用法：node scripts/verify-nds.mjs "public/nds/game.nds"')
+if (!romPath)
+  throw new Error('用法：node scripts/verify-nds.mjs "public/nds/game.nds"')
 let lastFrame
 let presented = 0
 const runtime = new NDSRuntime({
-  onFrame: pixels => { lastFrame = pixels.slice(); presented++ },
+  onFrame: (pixels) => { lastFrame = pixels.slice(); presented++ },
   onStatus: text => console.log(text),
 })
 try {
@@ -30,7 +31,8 @@ try {
   const start = performance.now()
   for (let frame = 0; frame < 360; frame++) {
     runtime.runFrame()
-    if (frame % 60 === 59) runtime.present()
+    if (frame % 60 === 59)
+      runtime.present()
   }
   const elapsed = performance.now() - start
   assert.equal(lastFrame.length, 256 * 192 * 4 * 2)
@@ -50,10 +52,13 @@ try {
   runtime.update(10000)
   assert.equal(runtime.frameCount, count + 2, '追帧应受预算限制')
   console.log(JSON.stringify({
-    frames: count, presented, elapsedMs: Math.round(elapsed),
+    frames: count,
+    presented,
+    elapsedMs: Math.round(elapsed),
     coreAverageMs: +(elapsed / count).toFixed(2),
     heapMiB: runtime.module.HEAPU8.byteLength / 1048576,
-    topColors: topColors.size, bottomColors: bottomColors.size,
+    topColors: topColors.size,
+    bottomColors: bottomColors.size,
     alphaValues: [...new Set(firstFrame.filter((_, index) => index % 4 === 3))],
     maxChannel: firstFrame.reduce((max, value, index) => index % 4 === 3 ? max : Math.max(max, value), 0),
     note: 'Node 核心验证，不代表目标浏览器帧率、音频或实际游玩验收',

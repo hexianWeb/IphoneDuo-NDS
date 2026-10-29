@@ -1,14 +1,16 @@
 import * as THREE from 'three/webgpu'
-import ExhibitLabel from './ExhibitLabel.js'
 import { createPlinthGeometry } from './exhibitionGeometry.js'
-import { exhibitLabelLayout, internalComponents as COMPONENTS } from './exhibitLabelLayout.js'
+import ExhibitLabel from './ExhibitLabel.js'
+import { internalComponents as COMPONENTS, exhibitLabelLayout } from './exhibitLabelLayout.js'
 
 // detail.glb 的三个根节点共用原点；语义映射集中在展品组件，独立摆放不影响产品 Rig。
 export default class InternalComponentsDisplay {
   constructor({ gltf, debug, onLayout, labelTextures }) {
-    if (!gltf?.scene) throw new Error('controllerDetailModel 未返回有效的 GLTF Scene')
+    if (!gltf?.scene)
+      throw new Error('controllerDetailModel 未返回有效的 GLTF Scene')
     for (const { node } of COMPONENTS) {
-      if (!gltf.scene.getObjectByName(node)) throw new Error(`内部元件模型缺少节点：${node}`)
+      if (!gltf.scene.getObjectByName(node))
+        throw new Error(`内部元件模型缺少节点：${node}`)
     }
     this.onLayout = onLayout
     this.params = {
@@ -30,13 +32,15 @@ export default class InternalComponentsDisplay {
     this.materialCopies = new Map()
     this.labels = []
     this.components = []
-    gltf.scene.traverse(mesh => {
-      if (!mesh.isMesh) return
+    gltf.scene.traverse((mesh) => {
+      if (!mesh.isMesh)
+        return
       this.geometries.add(mesh.geometry)
       for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
         this.materials.add(material)
         for (const value of Object.values(material)) {
-          if (value?.isTexture) this.textures.add(value)
+          if (value?.isTexture)
+            this.textures.add(value)
         }
       }
     })
@@ -91,16 +95,18 @@ export default class InternalComponentsDisplay {
     const bounds = new THREE.Box3().setFromObject(model, true)
     const size = bounds.getSize(new THREE.Vector3())
     const fit = Math.min(width / size.x, depth / size.z)
-    if (!Number.isFinite(fit) || fit <= 0) throw new Error(`内部元件 ${node} 缺少有效展示尺寸`)
+    if (!Number.isFinite(fit) || fit <= 0)
+      throw new Error(`内部元件 ${node} 缺少有效展示尺寸`)
     const center = bounds.getCenter(new THREE.Vector3())
     normalization.scale.setScalar(fit)
     normalization.position.set(-center.x * fit, -bounds.min.y * fit, -center.z * fit)
     group.add(normalization)
-    model.traverse(mesh => {
-      if (!mesh.isMesh) return
+    model.traverse((mesh) => {
+      if (!mesh.isMesh)
+        return
       mesh.castShadow = true
       mesh.receiveShadow = true
-      const convert = material => {
+      const convert = (material) => {
         if (!this.materialCopies.has(material)) {
           const copy = material.isMeshPhysicalMaterial
             ? new THREE.MeshPhysicalNodeMaterial().copy(material)
@@ -108,7 +114,8 @@ export default class InternalComponentsDisplay {
           copy.name = `${material.name}_InternalComponent`
           // 场景没有 IBL；CPU 导出金属度为 1 时顶盖只反射直接光而近乎发黑。
           // 展示副本保留原底色/ORM/法线，保留一部分漫反射让银色顶盖和丝印在现有灯光下可读。
-          if (node === 'cpu' && material.name === 'material') copy.metalness = 0.45
+          if (node === 'cpu' && material.name === 'material')
+            copy.metalness = 0.45
           this.materialCopies.set(material, copy)
           this.materials.add(copy)
         }
@@ -171,7 +178,8 @@ export default class InternalComponentsDisplay {
   }
 
   applyLayout() {
-    if (!this.layout) return
+    if (!this.layout)
+      return
     const { width, depth, centerX, centerZ, floorY } = this.layout
     this.group.scale.setScalar(width * this.params.scale)
     this.group.position.set(centerX + width * this.params.x, floorY, centerZ + depth * this.params.z)
@@ -196,7 +204,8 @@ export default class InternalComponentsDisplay {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Internal Components', expanded: false })
     this.folder.addBinding(this.params, 'visible', { label: 'Visible' }).on('change', () => this.setCompact(this.compact))
     for (const [key, min, max, step] of [['x', -3, -0.8, 0.01], ['z', -1, 1, 0.01], ['yaw', -90, 90, 1], ['scale', 0.5, 1.5, 0.01]]) {

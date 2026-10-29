@@ -285,7 +285,8 @@ export default class CameraDirector {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const folder = this.debug.ui.addFolder({
       title: 'Camera Director',
       expanded: true,

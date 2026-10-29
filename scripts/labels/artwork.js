@@ -76,11 +76,13 @@ const backgrounds = { parts: null, plaque: '#edeae3', internalLegend: '#e8eaec',
 export function drawLabelImage(key) {
   const layout = getLabelLayout(key)
   const dockIndex = themeLabelVariantKeys.indexOf(key)
-  if (!layout || (dockIndex < 0 && !painters[key])) throw new Error(`未知标签：${key}`)
+  if (!layout || (dockIndex < 0 && !painters[key]))
+    throw new Error(`未知标签：${key}`)
   const canvas = document.createElement('canvas')
   Object.assign(canvas, getLabelImageSize(layout))
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('离线标签生成需要 Canvas 2D')
+  if (!ctx)
+    throw new Error('离线标签生成需要 Canvas 2D')
   const height = 1000 * layout.height / layout.width
   ctx.setTransform(canvas.width / 1000, 0, 0, canvas.height / height, 0, 0)
   ctx.textBaseline = 'alphabetic'
@@ -90,7 +92,8 @@ export function drawLabelImage(key) {
     ctx.fillStyle = background
     ctx.fillRect(0, 0, 1000, height)
   }
-  if (dockIndex >= 0) drawThemeLabelArtwork(ctx, themeLabelPresets, themeLabelPresets[dockIndex].key)
+  if (dockIndex >= 0)
+    drawThemeLabelArtwork(ctx, themeLabelPresets, themeLabelPresets[dockIndex].key)
   else painters[key](ctx, height)
   return canvas
 }
@@ -99,7 +102,7 @@ export async function generateLabelImages() {
   // 显式等待本地字体准备；输出 PNG 后其它设备不再依赖字体安装情况。
   await Promise.all([document.fonts.load('800 46px "Segoe UI"'), document.fonts.load('600 15px "Segoe UI"'), document.fonts.load('800 132px Arial')])
   await document.fonts.ready
-  return labelAssetKeys.map(key => {
+  return labelAssetKeys.map((key) => {
     const canvas = drawLabelImage(key)
     return { key, width: canvas.width, height: canvas.height, png: canvas.toDataURL('image/png').split(',')[1] }
   })

@@ -1,7 +1,7 @@
-import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
-import Experience from '../../Experience.js'
+import * as THREE from 'three/webgpu'
 import { exhibitionFloorNodes } from '../../../shaders/exhibitionFloor.js'
+import Experience from '../../Experience.js'
 import { createCycloramaGeometry } from './exhibitionGeometry.js'
 
 // 地面与弧墙共用材质和连续剖面。此节点独立挂 Scene，不参与产品缩放、折叠或装配。
@@ -68,7 +68,8 @@ export default class Stage {
 
   configureTextures(textures) {
     for (const key of ['color', 'normal', 'roughness']) {
-      if (!textures?.[key]?.isTexture) throw new Error(`Stage 缺少塑料贴图：${key}`)
+      if (!textures?.[key]?.isTexture)
+        throw new Error(`Stage 缺少塑料贴图：${key}`)
     }
     textures.color.colorSpace = THREE.SRGBColorSpace
     textures.normal.colorSpace = THREE.NoColorSpace
@@ -117,7 +118,8 @@ export default class Stage {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     this.folder = this.debug.ui.addFolder({ title: 'Stage / Cyclorama', expanded: false })
     this.folder.addBinding(this.params, 'visible', { label: 'Visible' })
       .on('change', ({ value }) => { this.mesh.visible = value })
@@ -134,10 +136,16 @@ export default class Stage {
     }
     const effects = this.folder.addFolder({ title: 'Grid / Halo' })
     const ranges = {
-      gridOpacity: [0, 0.25, 0.005], gridSpacing: [0.1, 2, 0.05], gridFade: [1, 12, 0.1],
-      haloStrength: [0, 0.8, 0.01], haloScaleX: [0.5, 1.3, 0.01], haloScaleZ: [0.5, 1.3, 0.01],
-      haloOffsetX: [-2, 2, 0.01], haloOffsetZ: [-2, 2, 0.01],
-      ringStrength: [0, 3, 0.05], ringWidth: [0.001, 0.03, 0.001],
+      gridOpacity: [0, 0.25, 0.005],
+      gridSpacing: [0.1, 2, 0.05],
+      gridFade: [1, 12, 0.1],
+      haloStrength: [0, 0.8, 0.01],
+      haloScaleX: [0.5, 1.3, 0.01],
+      haloScaleZ: [0.5, 1.3, 0.01],
+      haloOffsetX: [-2, 2, 0.01],
+      haloOffsetZ: [-2, 2, 0.01],
+      ringStrength: [0, 3, 0.05],
+      ringWidth: [0.001, 0.03, 0.001],
     }
     for (const [key, [min, max, step]] of Object.entries(ranges)) {
       effects.addBinding(this.params, key, { min, max, step }).on('change', () => this.applyUniforms())

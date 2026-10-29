@@ -41,10 +41,12 @@ export default class ControllerAssembly {
     const bounds = new THREE.Box3().makeEmpty()
 
     this.controller.traverse((child) => {
-      if (!child.isMesh || !child.geometry) return
+      if (!child.isMesh || !child.geometry)
+        return
 
       child.geometry.computeBoundingBox()
-      if (!child.geometry.boundingBox) return
+      if (!child.geometry.boundingBox)
+        return
 
       // 所有距离都在 BottomRig 局部空间计算，避免 PresentationRoot 缩放污染装配参数。
       const childToBottomMatrix = inverseBottomMatrix.clone().multiply(child.matrixWorld)
@@ -132,7 +134,8 @@ export default class ControllerAssembly {
 
   play({ prepare = true, onComplete } = {}) {
     this.killTimeline()
-    if (prepare) this.prepareAssembly?.()
+    if (prepare)
+      this.prepareAssembly?.()
     this.setVisible(true)
     this.applyEntryPose()
 
@@ -187,7 +190,8 @@ export default class ControllerAssembly {
 
   setEntryPose({ prepare = true } = {}) {
     this.killTimeline()
-    if (prepare) this.prepareAssembly?.()
+    if (prepare)
+      this.prepareAssembly?.()
     this.setVisible(true)
     this.applyEntryPose()
   }
@@ -254,7 +258,8 @@ export default class ControllerAssembly {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const folder = this.debug.ui.addFolder({ title: 'Controller Assembly', expanded: false })
     this.stateBinding = folder.addBinding(this.params, 'state', {
       label: 'State',

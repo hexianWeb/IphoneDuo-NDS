@@ -1,12 +1,13 @@
 import * as THREE from 'three/webgpu'
-import ExhibitLabel from './ExhibitLabel.js'
 import { createPlinthGeometry } from './exhibitionGeometry.js'
-import { createGameCard } from './gameCard.js'
+import ExhibitLabel from './ExhibitLabel.js'
 import { exhibitLabelLayout } from './exhibitLabelLayout.js'
+import { createGameCard } from './gameCard.js'
 
 export default class GameLibraryDisplay {
   constructor({ coverTextures, debug, onLayout, labelTexture }) {
-    if (coverTextures.length !== 4 || coverTextures.some(texture => !texture?.image)) throw new Error('Game Library 缺少四张卡带封面')
+    if (coverTextures.length !== 4 || coverTextures.some(texture => !texture?.image))
+      throw new Error('Game Library 缺少四张卡带封面')
     this.onLayout = onLayout
     // 原整体比例 1.1 缩至 75%；从 +Y 俯视，绕 Y 的负角度表示顺时针，再转 15°。
     this.params = { visible: true, x: 1.48, z: -0.1, yaw: -27, scale: 0.825, inclination: 68, looseX: -0.1, looseZ: 0.38, looseYaw: 17 }
@@ -82,7 +83,8 @@ export default class GameLibraryDisplay {
   }
 
   applyLayout() {
-    if (!this.layout) return
+    if (!this.layout)
+      return
     const { width, depth, centerX, centerZ, floorY } = this.layout
     this.group.scale.setScalar(width * this.params.scale)
     this.group.position.set(centerX + width * this.params.x, floorY, centerZ + depth * this.params.z)
@@ -100,7 +102,8 @@ export default class GameLibraryDisplay {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Game Library', expanded: false })
     this.folder.addBinding(this.params, 'visible', { label: 'Visible' }).on('change', () => this.setCompact(this.compact))
     for (const [key, min, max, step] of [['x', 0.8, 3, 0.01], ['z', -1, 1.2, 0.01], ['yaw', -90, 90, 1], ['scale', 0.6, 1.8, 0.01]]) {

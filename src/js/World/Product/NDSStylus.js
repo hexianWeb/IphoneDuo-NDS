@@ -95,33 +95,41 @@ export default class NDSStylus {
     document.body.append(this.canvas)
     // 原生 dialog 位于 top layer；非交互 popover 让鼠标伴随模型也能显示在操作说明上方。
     this.popover = typeof this.canvas.showPopover === 'function'
-    if (this.popover) this.canvas.setAttribute('popover', 'manual')
+    if (this.popover)
+      this.canvas.setAttribute('popover', 'manual')
   }
 
   bindPointer() {
     const options = { capture: true, signal: this.listeners.signal }
     window.addEventListener('pointermove', event => this.movePointer(event), options)
     window.addEventListener('pointerdown', (event) => {
-      if (event.pointerType !== 'mouse' || event.button !== 0) return
+      if (event.pointerType !== 'mouse' || event.button !== 0)
+        return
       this.movePointer(event)
       this.pressed = true
       this.tapTime = 0.07
       this.pulseAge = 0
     }, options)
     window.addEventListener('pointerup', (event) => {
-      if (event.pointerType === 'mouse' && event.button === 0) this.pressed = false
+      if (event.pointerType === 'mouse' && event.button === 0)
+        this.pressed = false
     }, options)
     window.addEventListener('pointercancel', () => this.release(), options)
     window.addEventListener('blur', () => this.release(), options)
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.release() }, options)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden)
+        this.release()
+    }, options)
     document.documentElement.addEventListener('pointerleave', () => this.release(), options)
   }
 
   movePointer(event) {
-    if (event.pointerType !== 'mouse') return
+    if (event.pointerType !== 'mouse')
+      return
     this.pointer.set(event.clientX, event.clientY)
     // 移出窗口后再次进入不沿历史距离计算速度，避免重新聚焦时猛烈摆动。
-    if (!this.mouseInside) this.previousPointer.copy(this.pointer)
+    if (!this.mouseInside)
+      this.previousPointer.copy(this.pointer)
     this.mouseInside = true
     this.syncVisibility()
     const dialog = document.querySelector('dialog[open]')
@@ -142,15 +150,19 @@ export default class NDSStylus {
   }
 
   syncVisibility() {
-    if (this.visibilityEnabled === this.params.enabled && this.visibilityInside === Boolean(this.mouseInside)) return
-    if (this.visibilityEnabled !== this.params.enabled) this.renderRequested = true
+    if (this.visibilityEnabled === this.params.enabled && this.visibilityInside === Boolean(this.mouseInside))
+      return
+    if (this.visibilityEnabled !== this.params.enabled)
+      this.renderRequested = true
     this.visibilityEnabled = this.params.enabled
     this.visibilityInside = Boolean(this.mouseInside)
     this.canvas.hidden = !this.params.enabled
     if (this.popover) {
       const open = this.canvas.matches(':popover-open')
-      if (this.params.enabled && !open) this.canvas.showPopover()
-      else if (!this.params.enabled && open) this.canvas.hidePopover()
+      if (this.params.enabled && !open)
+        this.canvas.showPopover()
+      else if (!this.params.enabled && open)
+        this.canvas.hidePopover()
     }
     document.documentElement.classList.toggle('nds-stylus-active', this.params.enabled && Boolean(this.mouseInside))
   }
@@ -212,20 +224,22 @@ export default class NDSStylus {
   }
 
   consumeRenderRequest() {
-    if (!this.params.enabled) return false
-    const pose = [this.pen.rotation.x, this.pen.rotation.y, this.pen.rotation.z,
-      this.pen.scale.x, this.pen.scale.y, this.pen.scale.z, this.pulse.scale.x, this.pulse.material.opacity]
+    if (!this.params.enabled)
+      return false
+    const pose = [this.pen.rotation.x, this.pen.rotation.y, this.pen.rotation.z, this.pen.scale.x, this.pen.scale.y, this.pen.scale.z, this.pulse.scale.x, this.pulse.material.opacity]
     // CSS 平移无需重绘 GPU 画布；弹簧、落笔和波纹停稳后复用最后一帧，微小误差低于可见像素。
     const changed = this.renderRequested || pose.some((value, index) => !Number.isFinite(this.renderedPose[index])
       || Math.abs(value - this.renderedPose[index]) > 0.000001)
-    if (!changed) return false
+    if (!changed)
+      return false
     this.renderedPose.set(pose)
     this.renderRequested = false
     return true
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'NDS Stylus', expanded: false })
     this.folder.addBinding(this.params, 'enabled', { label: 'Enabled' }).on('change', () => this.syncVisibility())
     this.folder.addBinding(this.params, 'length', { label: 'Length (px)', min: 195, max: 420, step: 1 })
@@ -239,7 +253,8 @@ export default class NDSStylus {
     this.listeners.abort()
     document.documentElement.classList.remove('nds-stylus-active')
     this.folder?.dispose()
-    if (this.popover && this.canvas.matches(':popover-open')) this.canvas.hidePopover()
+    if (this.popover && this.canvas.matches(':popover-open'))
+      this.canvas.hidePopover()
     this.canvas.remove()
     this.scene.clear()
     this.geometries.forEach(geometry => geometry.dispose())

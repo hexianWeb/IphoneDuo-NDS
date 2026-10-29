@@ -14,10 +14,11 @@ export default class ExhibitPlant {
     this.group = new THREE.Group()
     this.group.name = 'ExhibitPlant'
 
-    if (!gltf?.scene) throw new Error('rhyzomePlant 未返回有效的 GLTF Scene')
+    if (!gltf?.scene)
+      throw new Error('rhyzomePlant 未返回有效的 GLTF Scene')
 
     this.model = gltf.scene.clone(true)
-    this.model.traverse(child => {
+    this.model.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true
         child.receiveShadow = true
@@ -32,7 +33,8 @@ export default class ExhibitPlant {
   normalizeHeight(group) {
     const bounds = new THREE.Box3().setFromObject(group, true)
     const size = bounds.getSize(new THREE.Vector3())
-    if (size.y > 0) group.scale.multiplyScalar(1 / size.y)
+    if (size.y > 0)
+      group.scale.multiplyScalar(1 / size.y)
   }
 
   ground(group) {
@@ -46,7 +48,8 @@ export default class ExhibitPlant {
   }
 
   applyLayout() {
-    if (!this.layout) return
+    if (!this.layout)
+      return
     const { width: w, depth: d, centerX, centerZ, floorY } = this.layout
     const p = this.params
     this.group.visible = p.showPlant
@@ -61,7 +64,8 @@ export default class ExhibitPlant {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Exhibit Plant', expanded: false })
     this.folder.addBinding(this.params, 'showPlant', { label: 'Visible' }).on('change', () => this.applyLayout())
     for (const [suffix, min, max, step, label] of [
@@ -76,8 +80,9 @@ export default class ExhibitPlant {
 
   destroy() {
     this.folder?.dispose()
-    this.model.traverse(child => {
-      if (!child.isMesh) return
+    this.model.traverse((child) => {
+      if (!child.isMesh)
+        return
       child.geometry?.dispose()
       const materials = Array.isArray(child.material) ? child.material : [child.material]
       for (const material of materials) material?.dispose()

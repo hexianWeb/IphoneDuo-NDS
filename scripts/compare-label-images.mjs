@@ -13,12 +13,13 @@ const files = [
 ]
 const optionalFiles = ['classic', 'retro', 'midnight', 'custom'].map(name => `label-dock-${name}.png`)
 for (const file of optionalFiles) {
-  try { await readFile(join(before, file)); await readFile(join(after, file)); files.push(file) } catch {}
+  try { await readFile(join(before, file)); await readFile(join(after, file)); files.push(file) }
+  catch {}
 }
 await withChromePage({ chromePath, tempRoot, prefix: 'duo-label-diff-' }, async ({ evaluate, output }) => {
   const results = []
   for (const file of files) {
-    const images = await Promise.all([before, after].map(async root => 'data:image/png;base64,' + (await readFile(join(root, file))).toString('base64')))
+    const images = await Promise.all([before, after].map(async root => `data:image/png;base64,${(await readFile(join(root, file))).toString('base64')}`))
     const diff = await evaluate(`(async () => {
       const read=async src => {
         const img=new Image(); img.src=src; await img.decode()

@@ -23,12 +23,14 @@ export default class ThemeLabel extends ExhibitLabel {
   }
 
   setPalette(themes) {
-    if (themes.length !== 3 || themes.some((theme, index) => theme.key !== themeLabelPresets[index].key)) throw new Error('Dock 标签需要原顺序的三套主题')
+    if (themes.length !== 3 || themes.some((theme, index) => theme.key !== themeLabelPresets[index].key))
+      throw new Error('Dock 标签需要原顺序的三套主题')
     const color = new THREE.Color()
     const palette = themes.map(theme => ({ ...theme, ...Object.fromEntries(['shell', 'buttons', 'dpad']
       .map(key => [key, `#${color.set(theme[key]).getHexString()}`])) }))
     const signature = JSON.stringify(palette)
-    if (signature === this.signature) return
+    if (signature === this.signature)
+      return
     this.signature = signature
     this.themes = palette
     this.usePreset = palette.every((theme, index) => ['key', 'label', 'shell', 'buttons', 'dpad'].every(key => theme[key] === themeLabelPresets[index][key]))
@@ -36,7 +38,8 @@ export default class ThemeLabel extends ExhibitLabel {
   }
 
   setSelectedTheme(key) {
-    if (this.selectedTheme === key) return
+    if (this.selectedTheme === key)
+      return
     this.selectedTheme = key
     this.updateTexture()
   }
@@ -53,7 +56,8 @@ export default class ThemeLabel extends ExhibitLabel {
       this.canvas = document.createElement('canvas')
       Object.assign(this.canvas, getLabelImageSize(exhibitLabelLayout.dock))
       this.context = this.canvas.getContext('2d')
-      if (!this.context) throw new Error('自定义 Dock 标签需要 Canvas 2D')
+      if (!this.context)
+        throw new Error('自定义 Dock 标签需要 Canvas 2D')
       this.dynamicTexture = new THREE.CanvasTexture(this.canvas)
       this.dynamicTexture.name = 'ControllerThemesLegend_Custom_Labels'
       this.dynamicTexture.colorSpace = THREE.SRGBColorSpace
@@ -75,7 +79,8 @@ export default class ThemeLabel extends ExhibitLabel {
 
   releaseCanvas() {
     this.dynamicTexture?.dispose()
-    if (this.canvas) this.canvas.width = this.canvas.height = 1
+    if (this.canvas)
+      this.canvas.width = this.canvas.height = 1
     this.dynamicTexture = null
     this.context = null
     this.canvas = null

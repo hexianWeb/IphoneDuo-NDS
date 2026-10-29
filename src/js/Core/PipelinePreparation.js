@@ -22,7 +22,8 @@ export default class PipelinePreparation {
 
   nextFrame() {
     const signal = this.abortController.signal
-    if (signal.aborted) return Promise.resolve(false)
+    if (signal.aborted)
+      return Promise.resolve(false)
     return new Promise((resolve) => {
       let id
       const abort = () => {
@@ -52,7 +53,8 @@ export default class PipelinePreparation {
         resolve(!signal.aborted)
       }, (error) => {
         signal.removeEventListener('abort', abort)
-        if (signal.aborted) resolve(false)
+        if (signal.aborted)
+          resolve(false)
         else reject(error)
       })
     })
@@ -68,7 +70,8 @@ export default class PipelinePreparation {
       configurable: true,
       writable: true,
       value(object, promises) {
-        if (promises != null) return original.call(this, object, promises)
+        if (promises != null)
+          return original.call(this, object, promises)
         created.push({ pipeline: object.pipeline, material: object.material?.name || object.material?.type || '未命名材质' })
         // 描述符、错误域及 ready 状态仍完全由 Three 持有，不重写 GPUDevice 或复制其实现。
         return original.call(this, object, pending)
@@ -80,36 +83,43 @@ export default class PipelinePreparation {
       throw error
     }
     finally {
-      if (descriptor) Object.defineProperty(backend, 'createRenderPipeline', descriptor)
+      if (descriptor)
+        Object.defineProperty(backend, 'createRenderPipeline', descriptor)
       else delete backend.createRenderPipeline
     }
     return { pending, created }
   }
 
   async run(renderFrame) {
-    if (this.running) throw new Error('管线预热不能并行执行。')
+    if (this.running)
+      throw new Error('管线预热不能并行执行。')
     const result = { completed: false, passes: 0, pipelines: 0, renderSubmitMs: 0, pipelineWaitMs: 0, queueWaitMs: 0 }
     this.running = true
     try {
       for (let pass = 0; pass < this.maxPasses; pass++) {
-        if (!await this.nextFrame()) return result
+        if (!await this.nextFrame())
+          return result
         const submittedAt = performance.now()
         const { pending, created } = this.collect(renderFrame)
         result.renderSubmitMs += performance.now() - submittedAt
         result.passes++
         result.pipelines += created.length
         const compileStartedAt = performance.now()
-        if (!await this.wait(Promise.all(pending))) return result
+        if (!await this.wait(Promise.all(pending)))
+          return result
         result.pipelineWaitMs += performance.now() - compileStartedAt
         for (const { pipeline, material } of created) {
           const data = this.backend.get(pipeline)
           // Three 的创建 Promise 在验证失败时也会 resolve，不能把 resolve 当成管线成功。
-          if (data.error || !data.pipeline) throw new Error(`渲染管线准备失败：${material}`)
+          if (data.error || !data.pipeline)
+            throw new Error(`渲染管线准备失败：${material}`)
         }
-        if (created.length) continue
+        if (created.length)
+          continue
         // 前几轮未 ready 的物体会被 Three 跳过；只有零新管线的完整重绘及 GPU 完成才可显示。
         const queueStartedAt = performance.now()
-        if (!await this.wait(this.backend.device.queue.onSubmittedWorkDone())) return result
+        if (!await this.wait(this.backend.device.queue.onSubmittedWorkDone()))
+          return result
         result.queueWaitMs += performance.now() - queueStartedAt
         result.completed = true
         return result

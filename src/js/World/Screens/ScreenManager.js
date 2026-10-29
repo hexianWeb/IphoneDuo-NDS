@@ -3,9 +3,9 @@ import * as THREE from 'three/webgpu'
 import Experience from '../../Experience.js'
 import NDSScreenBridge from '../../NDS/NDSScreenBridge.js'
 import ControllerDisplay from './ControllerDisplay.js'
+import GameEntryTransition from './GameEntryTransition.js'
 import NDSGameSurface from './NDSGameSurface.js'
 import PhoneScreenSurface from './PhoneScreenSurface.js'
-import GameEntryTransition from './GameEntryTransition.js'
 
 export default class ScreenManager {
   constructor({
@@ -97,10 +97,12 @@ export default class ScreenManager {
   }
 
   setMode(mode) {
-    if (this.mode === mode) return
+    if (this.mode === mode)
+      return
 
     this.mode = mode
-    if (mode === 'game-home') this.controllerDisplay.setView('home')
+    if (mode === 'game-home')
+      this.controllerDisplay.setView('home')
     this.applyMode()
   }
 
@@ -158,11 +160,13 @@ export default class ScreenManager {
     // 主产品初始化已预热 NDS 两屏；按需重编译时也覆盖实际 GTAO/透射渲染通道。
     if (!this.gameMaterialsPrepared) {
       const prepared = await this.experience.renderer.warmup()
-      if (!prepared || this.gameEntry.destroyed || generation !== this.gameEntry.generation) return false
+      if (!prepared || this.gameEntry.destroyed || generation !== this.gameEntry.generation)
+        return false
       this.gameMaterialsPrepared = true
     }
     // 编译期间取消或 Replay 后，不得重新打开旧启动请求的遮罩。
-    if (this.gameEntry.destroyed || generation !== this.gameEntry.generation) return false
+    if (this.gameEntry.destroyed || generation !== this.gameEntry.generation)
+      return false
     return this.gameEntry.open()
   }
 
@@ -258,7 +262,8 @@ export default class ScreenManager {
   }
 
   getActionAtUv(uv, screen) {
-    if (this.mode !== 'game-home') return null
+    if (this.mode !== 'game-home')
+      return null
     return this.controllerDisplay.getActionAtUv(
       uv,
       screen === this.screens.topScreen ? 'top' : 'bottom',
@@ -266,7 +271,8 @@ export default class ScreenManager {
   }
 
   handleUiAction(action) {
-    if (this.mode !== 'game-home') return undefined
+    if (this.mode !== 'game-home')
+      return undefined
     return this.controllerDisplay.handleAction(action)
   }
 
@@ -276,7 +282,8 @@ export default class ScreenManager {
   }
 
   getNDSTouchAtUv(uv) {
-    if (this.mode !== 'playing') return null
+    if (this.mode !== 'playing')
+      return null
     return this.ndsSurfaces[1].getTouchAtUv(uv)
   }
 
@@ -289,23 +296,34 @@ export default class ScreenManager {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const folder = this.debug.ui.addFolder({ title: 'Game Changer Transition' })
     this.transitionProgressBinding = folder.addBinding(this.params, 'transitionProgress', {
-      label: 'Progress', min: 0, max: 1, step: 0.01,
+      label: 'Progress',
+      min: 0,
+      max: 1,
+      step: 0.01,
     }).on('change', ({ value }) => {
       // Tweakpane refresh 也会发出 change，程序刷新不能反向取消正在播放的 Timeline。
-      if (this.isRefreshingTransitionProgress) return
+      if (this.isRefreshingTransitionProgress)
+        return
 
       this.killGameChangerTransition()
       this.onDebugModeChange?.('attaching')
       this.setGameChangerProgress(value)
     })
     folder.addBinding(this.params, 'transitionHold', {
-      label: 'Hold', min: 0, max: 2, step: 0.05,
+      label: 'Hold',
+      min: 0,
+      max: 2,
+      step: 0.05,
     })
     folder.addBinding(this.params, 'transitionDuration', {
-      label: 'Duration', min: 0.1, max: 3, step: 0.05,
+      label: 'Duration',
+      min: 0.1,
+      max: 3,
+      step: 0.05,
     })
     folder.addButton({ title: 'Inspect Transparent' })
       .on('click', () => this.inspectTransparentController())

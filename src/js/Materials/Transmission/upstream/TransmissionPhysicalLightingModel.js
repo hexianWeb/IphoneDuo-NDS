@@ -1,5 +1,5 @@
-import { PhysicalLightingModel } from "three/webgpu";
-import { diffuseColor, mix, transmission } from "three/tsl";
+import { diffuseColor, mix, transmission } from 'three/tsl'
+import { PhysicalLightingModel } from 'three/webgpu'
 
 export default class TransmissionPhysicalLightingModel extends PhysicalLightingModel {
   constructor(
@@ -10,19 +10,19 @@ export default class TransmissionPhysicalLightingModel extends PhysicalLightingM
     useCustomTransmission,
     backdropNode,
   ) {
-    super(clearcoat, sheen, iridescence, anisotropy, false, false);
-    this.useCustomTransmission = useCustomTransmission;
-    this.backdropNode = backdropNode;
+    super(clearcoat, sheen, iridescence, anisotropy, false, false)
+    this.useCustomTransmission = useCustomTransmission
+    this.backdropNode = backdropNode
   }
 
   start(builder) {
     if (this.backdropNode !== null) {
-      const context = builder.context;
-      context.backdrop = this.backdropNode;
-      context.backdropAlpha = transmission;
-      diffuseColor.a.mulAssign(mix(1, context.backdrop.a, transmission));
+      const context = builder.context
+      context.backdrop = this.backdropNode
+      context.backdropAlpha = transmission
+      diffuseColor.a.mulAssign(mix(1, context.backdrop.a, transmission))
     }
 
-    super.start(builder);
+    super.start(builder)
   }
 }

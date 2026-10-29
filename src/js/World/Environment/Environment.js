@@ -1,5 +1,5 @@
-import * as THREE from 'three/webgpu'
 import { RectAreaLightTexturesLib } from 'three/addons/lights/RectAreaLightTexturesLib.js'
+import * as THREE from 'three/webgpu'
 import Experience from '../../Experience.js'
 
 // 经实测放弃 HDR 环境贴图：studio HDR 与外壳 EXR Lightmap 重复计光，整体反而更平。
@@ -157,12 +157,16 @@ export default class Environment {
       const lightBounds = new THREE.Box3()
       const point = new THREE.Vector3()
       const direction = this.keyLight.target.position.clone().sub(this.keyLight.position).normalize()
-      for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
-        point.set(x, y, z)
-        lightBounds.expandByPoint(point.clone().applyMatrix4(camera.matrixWorldInverse))
-        if (direction.y < -0.01) {
-          point.addScaledVector(direction, (bounds.min.y - y) / direction.y)
-          lightBounds.expandByPoint(point.applyMatrix4(camera.matrixWorldInverse))
+      for (const x of [bounds.min.x, bounds.max.x]) {
+        for (const y of [bounds.min.y, bounds.max.y]) {
+          for (const z of [bounds.min.z, bounds.max.z]) {
+            point.set(x, y, z)
+            lightBounds.expandByPoint(point.clone().applyMatrix4(camera.matrixWorldInverse))
+            if (direction.y < -0.01) {
+              point.addScaledVector(direction, (bounds.min.y - y) / direction.y)
+              lightBounds.expandByPoint(point.applyMatrix4(camera.matrixWorldInverse))
+            }
+          }
         }
       }
       camera.left = Math.min(camera.left, lightBounds.min.x)
@@ -181,7 +185,8 @@ export default class Environment {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     this.folder = this.debug.ui.addFolder({ title: 'Environment', expanded: false })
 
     this.folder.addBinding(this.params, 'background', { label: 'Background' })
@@ -276,7 +281,8 @@ export default class Environment {
   }
 
   update() {
-    if (this.keyLightHelper?.visible) this.keyLightHelper.update()
+    if (this.keyLightHelper?.visible)
+      this.keyLightHelper.update()
   }
 
   destroy() {
@@ -295,10 +301,12 @@ export default class Environment {
     // LTC 是 Three 模块级输入；旧实例不得清掉新实例已替换的全局纹理。
     const ownsCurrentLTC = Object.entries(this.ltcTextures)
       .every(([key, texture]) => RectAreaLightTexturesLib[key] === texture)
-    if (ownsCurrentLTC) THREE.RectAreaLightNode.setLTC(null)
+    if (ownsCurrentLTC)
+      THREE.RectAreaLightNode.setLTC(null)
     for (const [key, texture] of Object.entries(this.ltcTextures)) {
       texture.dispose()
-      if (RectAreaLightTexturesLib[key] === texture) RectAreaLightTexturesLib[key] = null
+      if (RectAreaLightTexturesLib[key] === texture)
+        RectAreaLightTexturesLib[key] = null
     }
     this.scene.background = null
   }

@@ -1,5 +1,5 @@
-import * as THREE from 'three/webgpu'
 import { gsap } from 'gsap'
+import * as THREE from 'three/webgpu'
 
 const THEME_STORAGE_KEY = 'iphone-duo.controller-theme'
 
@@ -26,8 +26,11 @@ export default class ControllerThemes {
   select(key, { force = false } = {}) {
     const theme = this.colorDock.themes.find(item => item.key === key)
     if (!theme || this.state.productMode !== 'game-home' || this.state.introState !== 'ready'
-      || this.state.ndsStatus === 'loading') return
-    if (!force && key === this.state.controllerTheme) return
+      || this.state.ndsStatus === 'loading') {
+      return
+    }
+    if (!force && key === this.state.controllerTheme)
+      return
 
     this.timeline?.kill()
     const from = this.product.getControllerColors()
@@ -60,11 +63,13 @@ export default class ControllerThemes {
     const target = {
       shell: new THREE.Color(theme.shell),
       buttons: Object.fromEntries(Object.entries(this.classic.buttons).map(([part, colors]) => [
-        part, colors.map(() => new THREE.Color(part === 'dpad' ? theme.dpad : theme.buttons)),
+        part,
+        colors.map(() => new THREE.Color(part === 'dpad' ? theme.dpad : theme.buttons)),
       ])),
     }
     // Classic 精确恢复各按键的初始底色，不把多材质或不同 ABXY 原色合并成一枚色值。
-    if (theme.key === 'classic' && !force) target.buttons = this.classic.buttons
+    if (theme.key === 'classic' && !force)
+      target.buttons = this.classic.buttons
     return target
   }
 
@@ -85,7 +90,8 @@ export default class ControllerThemes {
   }
 
   finishTransition() {
-    if (!this.targetColors) return
+    if (!this.targetColors)
+      return
     this.timeline?.kill()
     this.timeline = null
     // 精确写入终点，消除插值末帧的浮点余差；重播或进入游戏时也在已选配色收束。

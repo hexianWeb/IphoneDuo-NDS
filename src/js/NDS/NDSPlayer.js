@@ -21,7 +21,7 @@ export default class NDSPlayer {
     this.audioMessage = '点击 Continue 可启用声音；手柄进入后可单独点击启用声音。'
     this.runtime = new NDSRuntime({
       onFrame,
-      onStatus: message => {
+      onStatus: (message) => {
         if (this.loading && this.activeRequest === this.requestId && !this.destroyed) {
           this.message = message
           this.render()
@@ -47,7 +47,8 @@ export default class NDSPlayer {
   }
 
   render() {
-    if (this.destroyed) return
+    if (this.destroyed)
+      return
     const info = {
       mode: this.mode,
       status: this.state.ndsStatus,
@@ -74,8 +75,7 @@ export default class NDSPlayer {
     else {
       this.cancelPending()
       this.runtime.pause()
-      this.setStatus(this.runtime.loaded ? 'paused' : 'idle',
-        this.runtime.loaded ? `${this.state.ndsRomName} · 已暂停` : this.message)
+      this.setStatus(this.runtime.loaded ? 'paused' : 'idle', this.runtime.loaded ? `${this.state.ndsRomName} · 已暂停` : this.message)
     }
   }
 
@@ -87,7 +87,9 @@ export default class NDSPlayer {
   }
 
   back() {
-    if (this.mode === 'playing') this.onExit()
+    if (this.mode === 'playing') {
+      this.onExit()
+    }
     else if (this.loading) {
       this.cancelPending()
       this.setStatus('idle', '启动已取消，等待当前加载收束后可重试')
@@ -95,15 +97,18 @@ export default class NDSPlayer {
   }
 
   async play(file = null, { userGesture = false } = {}) {
-    if (this.destroyed || this.loading || this.mode !== 'game-home') return
+    if (this.destroyed || this.loading || this.mode !== 'game-home')
+      return
     if (!file && !this.runtime.loaded && !ndsSources.testRom) {
       this.setStatus('idle', '请选择本地 .nds 文件')
-      if (userGesture) this.controls.chooseFile()
+      if (userGesture)
+        this.controls.chooseFile()
       return
     }
     // 在真实点击/按键栈中启动 WebAudio，不等待 WASM 或 ROM 下载。
     // 文件选择器停留较久时 change 事件可能已失去激活权限，不能让 resume 永久挂起并锁死按钮。
-    if (userGesture && this.audioWanted && navigator.userActivation?.isActive) this.enableAudio()
+    if (userGesture && this.audioWanted && navigator.userActivation?.isActive)
+      this.enableAudio()
     const request = ++this.requestId
     this.activeRequest = request
     this.loadAbort = new AbortController()
@@ -111,14 +116,17 @@ export default class NDSPlayer {
     this.setStatus('loading', '正在进入游戏…')
     const isCurrent = () => !this.destroyed && request === this.requestId && this.mode === 'game-home'
     try {
-      if (await this.onLaunchStart?.({ userGesture, enabled: this.audioWanted }) === false || !isCurrent()) return
+      if (await this.onLaunchStart?.({ userGesture, enabled: this.audioWanted }) === false || !isCurrent())
+        return
       if (file || !this.runtime.loaded) {
         await this.runtime.init(ndsSources)
-        if (!isCurrent()) return
+        if (!isCurrent())
+          return
         let name
         if (file) {
           const bytes = new Uint8Array(await file.arrayBuffer())
-          if (!isCurrent()) return
+          if (!isCurrent())
+            return
           this.runtime.loadBytes(bytes, file.name)
           name = file.name
         }
@@ -126,7 +134,8 @@ export default class NDSPlayer {
           await this.runtime.loadUrl(ndsSources.testRom, { signal: this.loadAbort.signal })
           name = decodeURIComponent(ndsSources.testRom.split('/').pop())
         }
-        if (!isCurrent()) return
+        if (!isCurrent())
+          return
         this.state.ndsRomName = name.replace(/\.(nds|srl)$/i, '')
         this.onGameInfo({ title: this.state.ndsRomName.replace(/\s*\([^)]*\)/g, ''), detail: 'NDS · Continue session' })
         this.runtime.runFrame()
@@ -137,7 +146,8 @@ export default class NDSPlayer {
         return
       }
       this.setStatus('loading', '准备就绪，开始游戏。')
-      if (await this.onLaunchReady?.() === false || !isCurrent()) return
+      if (await this.onLaunchReady?.() === false || !isCurrent())
+        return
       if (document.hidden || !document.hasFocus()) {
         this.setStatus('paused', '游戏已暂停 · 点击 Continue 开始')
         return
@@ -145,10 +155,12 @@ export default class NDSPlayer {
       this.onEnter()
     }
     catch (error) {
-      if (isCurrent()) this.fail(error)
+      if (isCurrent())
+        this.fail(error)
     }
     finally {
-      if (!this.destroyed && this.mode !== 'playing') this.onLaunchCancel?.()
+      if (!this.destroyed && this.mode !== 'playing')
+        this.onLaunchCancel?.()
       this.loading = false
       this.loadAbort = null
       this.render()
@@ -156,15 +168,18 @@ export default class NDSPlayer {
   }
 
   async enableAudio() {
-    if (this.audioBusy || this.destroyed) return
+    if (this.audioBusy || this.destroyed)
+      return
     this.audioBusy = true
     this.render()
     try {
       await this.runtime.audio.enable()
-      if (!this.destroyed) this.audioMessage = 'AudioWorklet · 48 kHz · stereo'
+      if (!this.destroyed)
+        this.audioMessage = 'AudioWorklet · 48 kHz · stereo'
     }
     catch (error) {
-      if (!this.destroyed) this.audioMessage = `声音未启用：${error.message}；可点击「启用声音」重试。`
+      if (!this.destroyed)
+        this.audioMessage = `声音未启用：${error.message}；可点击「启用声音」重试。`
     }
     finally {
       this.audioBusy = false
@@ -183,11 +198,13 @@ export default class NDSPlayer {
       this.audioWanted = true
       this.enableAudio()
     }
-    if (this.mode === 'playing') this.onFocus()
+    if (this.mode === 'playing')
+      this.onFocus()
   }
 
   chooseFile() {
-    if (this.mode === 'game-home' && !this.loading) this.controls.chooseFile()
+    if (this.mode === 'game-home' && !this.loading)
+      this.controls.chooseFile()
   }
 
   setButtons(actions) {
@@ -207,7 +224,8 @@ export default class NDSPlayer {
   }
 
   update(deltaMs) {
-    if (this.mode !== 'playing') return
+    if (this.mode !== 'playing')
+      return
     this.sceneFrames++
     try {
       this.runtime.update(deltaMs)
@@ -219,7 +237,8 @@ export default class NDSPlayer {
 
   fail(error) {
     this.runtime.pause()
-    if (this.mode === 'playing') this.onExit()
+    if (this.mode === 'playing')
+      this.onExit()
     this.setStatus('error', `NDS 运行失败：${error.message}`)
     console.error(error)
   }

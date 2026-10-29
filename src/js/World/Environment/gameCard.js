@@ -3,7 +3,8 @@ import { createPlinthGeometry } from './exhibitionGeometry.js'
 
 // 所有卡带共用同一壳体/触点规则，默认尺寸保留原地面卡带；纹理由调用方持有并回收。
 export function createGameCard({ coverTexture, name = 'OriginalGameCard', width = 0.2, depth = 0.218, geometries, materials }) {
-  if (!coverTexture?.image?.width || !coverTexture.image.height) throw new Error(`${name} 缺少有效的封面图片`)
+  if (!coverTexture?.image?.width || !coverTexture.image.height)
+    throw new Error(`${name} 缺少有效的封面图片`)
   coverTexture.colorSpace = THREE.SRGBColorSpace
   coverTexture.anisotropy = 8
   const group = new THREE.Group()

@@ -10,10 +10,10 @@ import ControllerFeedback from './Product/ControllerFeedback.js'
 import ControllerThemes from './Product/ControllerThemes.js'
 import ModelAdapter from './Product/ModelAdapter.js'
 import NDSStylus from './Product/NDSStylus.js'
-import ScreenManager from './Screens/ScreenManager.js'
 import ProductHeader from './Screens/ProductHeader.js'
 import ProductIntroCopy from './Screens/ProductIntroCopy.js'
 import ProductToolbar from './Screens/ProductToolbar.js'
+import ScreenManager from './Screens/ScreenManager.js'
 
 export default class World {
   constructor() {
@@ -40,12 +40,18 @@ export default class World {
     this.setIntro()
     this.setNDSPlayer()
     this.controllerThemes = new ControllerThemes({
-      product: this.product, colorDock: this.exhibition.colorDock, state: this.state, events: this.events,
+      product: this.product,
+      colorDock: this.exhibition.colorDock,
+      state: this.state,
+      events: this.events,
     })
     this.stylus = new NDSStylus({ debug: this.debug })
     this.setInputRouter()
     this.toolbar = new ProductToolbar({
-      state: this.state, events: this.events, themes: this.exhibition.colorDock.themes, canvas: this.experience.canvas,
+      state: this.state,
+      events: this.events,
+      themes: this.exhibition.colorDock.themes,
+      canvas: this.experience.canvas,
     })
     this.header = new ProductHeader({ state: this.state, events: this.events, canvas: this.experience.canvas })
     this.introCopy = new ProductIntroCopy({ state: this.state, events: this.events })
@@ -126,7 +132,8 @@ export default class World {
       interactionSurfaces: [this.product.nodes.topScreen, this.product.nodes.bottomDisplay],
       exhibitSurfaces: this.exhibition.colorDock.getInteractionSurfaces(),
       resolveExhibitAction: (intersection) => {
-        if (this.state.introState !== 'ready' || this.ndsPlayer.loading) return null
+        if (this.state.introState !== 'ready' || this.ndsPlayer.loading)
+          return null
         const key = this.exhibition.colorDock.getThemeAtHit(intersection)
         return key ? `theme:${key}` : null
       },
@@ -136,7 +143,8 @@ export default class World {
       onGameButtons: (actions) => {
         this.controllerFeedback.setActions(actions)
         // Game Home 只驱动 3D 按键；模拟器在暂停后不再接收按键，清空仍要送到 Runtime。
-        if (this.state.productMode === 'playing' || actions.length === 0) this.ndsPlayer.setButtons(actions)
+        if (this.state.productMode === 'playing' || actions.length === 0)
+          this.ndsPlayer.setButtons(actions)
       },
       setOrbitGesture: allowed => this.cameraDirector.setGestureOrbit(allowed),
       onGameTouch: point => this.ndsPlayer.touch(point),
@@ -164,7 +172,8 @@ export default class World {
   }
 
   setProductMode(mode) {
-    if (this.state.productMode === mode) return
+    if (this.state.productMode === mode)
+      return
 
     this.state.setProductMode(mode)
     this.ndsPlayer?.setMode(mode)
@@ -188,8 +197,10 @@ export default class World {
       return
     }
     const uiAction = this.screenManager.handleUiAction(action)
-    if (uiAction === null) return
-    if (uiAction !== undefined) action = uiAction
+    if (uiAction === null)
+      return
+    if (uiAction !== undefined)
+      action = uiAction
     if (action === 'continue' && this.state.productMode === 'game-home') {
       return this.ndsPlayer.play(null, options)
     }
@@ -213,8 +224,9 @@ export default class World {
     const renderer = this.experience.renderer
     const culling = new Map()
     // 编译也会做视锥剔除；Loading 内临时覆盖，避免 Hero 才露出的配件留到动画中首次编译。
-    this.scene.traverse(object => {
-      if (!object.isMesh) return
+    this.scene.traverse((object) => {
+      if (!object.isMesh)
+        return
       culling.set(object, object.frustumCulled)
       object.frustumCulled = false
     })
@@ -228,7 +240,8 @@ export default class World {
         this.screenManager.setMode(mode)
         this.screenManager.update()
         const prepared = await renderer.warmup()
-        if (!prepared || this.experience.destroyed) return false
+        if (!prepared || this.experience.destroyed)
+          return false
         this.events.emit('experience:scene-progress', { progress: (['phone', 'game-home', 'playing'].indexOf(mode) + 1) / 3 })
       }
       this.screenManager.markGameMaterialsPrepared()
@@ -241,7 +254,8 @@ export default class World {
         // 预热结束精确还原近闭合态与 Folded 镜头，避免首帧短暂露出装配终点。
       }
     }
-    if (this.experience.destroyed) return false
+    if (this.experience.destroyed)
+      return false
     this.experience.performanceMonitor?.setPhase('warmup-folded')
     return renderer.warmup()
   }

@@ -111,7 +111,8 @@ export default class IntroDirector {
   }
 
   pauseForScreenWakeDebug() {
-    if (this.params.pauseAtScreenWake) this.timeline?.pause()
+    if (this.params.pauseAtScreenWake)
+      this.timeline?.pause()
   }
 
   inspectScreenWake() {
@@ -126,7 +127,8 @@ export default class IntroDirector {
   }
 
   continueAssembly() {
-    if (this.state.introState !== 'screen-wake') return
+    if (this.state.introState !== 'screen-wake')
+      return
 
     if (this.timeline?.paused()) {
       this.timeline.resume()
@@ -211,7 +213,8 @@ export default class IntroDirector {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const folder = this.debug.ui.addFolder({ title: 'Intro Director' })
     this.stateBinding = folder.addBinding(this.params, 'state', {
       label: 'State',

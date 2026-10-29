@@ -22,12 +22,12 @@ export default class ExhibitSample {
     })
     const size = bounds.getSize(new THREE.Vector3())
     const fitScale = Math.min(width / size.x, height / size.y)
-    if (!Number.isFinite(fitScale) || fitScale <= 0) throw new Error(`${name} 缺少有效展示尺寸`)
+    if (!Number.isFinite(fitScale) || fitScale <= 0)
+      throw new Error(`${name} 缺少有效展示尺寸`)
     this.size = size.clone().multiplyScalar(fitScale)
     const center = bounds.getCenter(new THREE.Vector3())
     // 根节点的 XY 为展品中心，Z=0 为后表面，便于给展板留出悬挂间距或落到 Dock 承托面。
-    const normalization = new THREE.Matrix4().makeScale(fitScale, fitScale, fitScale)
-      .multiply(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -bounds.min.z))
+    const normalization = new THREE.Matrix4().makeScale(fitScale, fitScale, fitScale).multiply(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -bounds.min.z))
     sources.forEach((source, index) => {
       const mesh = new THREE.Mesh(source.geometry, null)
       mesh.name = `${name}_${source.name}`
@@ -38,7 +38,8 @@ export default class ExhibitSample {
       this.group.add(mesh)
       this.meshes.push(mesh)
       if (source.part === 'shell') {
-        if (!plasticParams) throw new Error(`${name} 的外壳缺少塑料材质参数`)
+        if (!plasticParams)
+          throw new Error(`${name} 的外壳缺少塑料材质参数`)
         const plastic = createControllerPlasticMaterial(mesh, { ...plasticParams, side: source.materials[0].side })
         plastic.material.name = `${name}_Plastic`
         mesh.material = plastic.material
@@ -50,7 +51,11 @@ export default class ExhibitSample {
           const material = new THREE.MeshPhysicalNodeMaterial({
             ...sourceMaterial,
             name: `${name}_Button_Plastic`,
-            metalness: 0, roughness: 0.28, clearcoat: 0.85, clearcoatRoughness: 0.12, ior: 1.47,
+            metalness: 0,
+            roughness: 0.28,
+            clearcoat: 0.85,
+            clearcoatRoughness: 0.12,
+            ior: 1.47,
           })
           buttonPrint?.applyTo(material, source, mesh)
           this.materials.add(material)
@@ -72,7 +77,8 @@ export default class ExhibitSample {
     }
     for (const { part, material } of this.buttonMaterials) {
       const value = part === 'dpad' ? dpad : buttons
-      if (value) material.color.set(value)
+      if (value)
+        material.color.set(value)
     }
   }
 

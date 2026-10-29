@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
 import { cp, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { defineConfig } from 'vite'
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 

@@ -41,14 +41,15 @@ export default class ProductHeader {
     }
     this.removeListeners = [
       ...['intro:state', 'product:mode'].map(event => events.on(event, () => this.render())),
-      events.on('nds:state', info => { this.nds = info; this.render() }),
+      events.on('nds:state', (info) => { this.nds = info; this.render() }),
     ]
     document.body.prepend(this.element)
     this.render()
   }
 
   handleAction(action, trigger) {
-    if (this.destroyed || !this.state.productMode) return
+    if (this.destroyed || !this.state.productMode)
+      return
     const playing = this.state.productMode === 'playing'
     const intro = this.state.introState !== 'ready' && !playing
     if (action === 'help') {
@@ -57,17 +58,21 @@ export default class ProductHeader {
       return
     }
     if (action === 'overview') {
-      if (this.nds.loading || playing) this.emitAction('back')
-      else if (intro) this.emitAction('skip-intro')
+      if (this.nds.loading || playing)
+        this.emitAction('back')
+      else if (intro)
+        this.emitAction('skip-intro')
       this.canvas.focus({ preventScroll: true })
       return
     }
-    if (action === 'replay-intro' && (intro || this.nds.loading || playing)) return
+    if (action === 'replay-intro' && (intro || this.nds.loading || playing))
+      return
     if (action === 'primary') {
       action = this.nds.loading || playing ? 'back' : intro ? 'skip-intro' : 'continue'
     }
     this.emitAction(action)
-    if (action === 'replay-intro') this.canvas.focus({ preventScroll: true })
+    if (action === 'replay-intro')
+      this.canvas.focus({ preventScroll: true })
   }
 
   emitAction(action) {
@@ -83,7 +88,8 @@ export default class ProductHeader {
     this.replay.disabled = !this.state.productMode || intro || this.nds.loading || playing
     for (const [button, active] of [[this.overview, !intro], [this.replay, intro]]) {
       button.classList.toggle('is-active', active)
-      if (active) button.setAttribute('aria-current', 'page')
+      if (active)
+        button.setAttribute('aria-current', 'page')
       else button.removeAttribute('aria-current')
     }
     const label = this.nds.loading ? '取消启动' : playing ? '返回展区' : intro ? '跳过动画' : this.nds.loaded ? '继续试玩' : '开始试玩'

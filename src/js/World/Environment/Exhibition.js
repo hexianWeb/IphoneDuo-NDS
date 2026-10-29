@@ -2,13 +2,13 @@ import * as THREE from 'three/webgpu'
 import Experience from '../../Experience.js'
 import ColorDock from './ColorDock.js'
 import ExhibitAirPods from './ExhibitAirPods.js'
+import { labelAssetKeys, themeLabelVariantKeys } from './exhibitLabelLayout.js'
 import ExhibitPlant from './ExhibitPlant.js'
 import ExhibitProps from './ExhibitProps.js'
 import GameLibraryDisplay from './GameLibraryDisplay.js'
 import InternalComponentsDisplay from './InternalComponentsDisplay.js'
 import PartsDisplay from './PartsDisplay.js'
 import ProductPlinth from './ProductPlinth.js'
-import { labelAssetKeys, themeLabelVariantKeys } from './exhibitLabelLayout.js'
 
 export default class Exhibition {
   constructor({ metrics, stage, sources, plantGltf, onLayout }) {
@@ -52,10 +52,8 @@ export default class Exhibition {
       .map(key => [key, experience.resources.items[`${key}LabelTexture`]]))
     this.plinth = new ProductPlinth({ debug: this.debug })
     this.group.add(this.plinth.group)
-    this.partsDisplay = new PartsDisplay({ sources, debug: this.debug, transmissionBackdrop: experience.renderer.transmissionBackdrop,
-      labelTexture: this.labelTextures.parts })
-    this.colorDock = new ColorDock({ sources, debug: this.debug, events: experience.events,
-      labelTextures: themeLabelVariantKeys.map(key => this.labelTextures[key]) })
+    this.partsDisplay = new PartsDisplay({ sources, debug: this.debug, transmissionBackdrop: experience.renderer.transmissionBackdrop, labelTexture: this.labelTextures.parts })
+    this.colorDock = new ColorDock({ sources, debug: this.debug, events: experience.events, labelTextures: themeLabelVariantKeys.map(key => this.labelTextures[key]) })
     this.parts = this.partsDisplay.group
     this.dock = this.colorDock.group
     this.group.add(this.parts, this.dock)
@@ -158,7 +156,8 @@ export default class Exhibition {
   }
 
   debugInit() {
-    if (!this.debug?.ui) return
+    if (!this.debug?.ui)
+      return
     this.folder = this.debug.ui.addFolder({ title: 'Exhibition', expanded: false })
     this.folder.addBinding(this.params, 'enabled', { label: 'Enabled' }).on('change', () => this.applyLayout())
     for (const key of ['showParts', 'showDock', 'hideOnNarrow']) {

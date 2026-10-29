@@ -14,7 +14,10 @@ export default class ExhibitLabel {
     this.texture.flipY = true
     this.texture.anisotropy = anisotropy
     this.material = new THREE.MeshStandardNodeMaterial({
-      name: `${name}_Label_Surface`, map: this.texture, roughness: 0.65, metalness: 0,
+      name: `${name}_Label_Surface`,
+      map: this.texture,
+      roughness: 0.65,
+      metalness: 0,
       // 镂空标签仍走不透明深度通道，只保留纸签/文字像素，避免整张画布盖住玻璃。
       alphaTest: cutout ? 0.5 : 0,
     })

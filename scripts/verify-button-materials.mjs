@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
-import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
+import * as THREE from 'three/webgpu'
+import ExhibitSample from '../src/js/World/Environment/ExhibitSample.js'
 import ButtonPrint from '../src/js/World/Product/ButtonPrint.js'
 import ControllerButtonMaterial from '../src/js/World/Product/ControllerButtonMaterial.js'
-import ExhibitSample from '../src/js/World/Environment/ExhibitSample.js'
 
 const document = globalThis.document
 globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {} }) }) }
@@ -22,13 +22,14 @@ try {
   // 模拟实际阴影的覆写材质，读取必须仍落在原 Mesh；只比较节点 hash 捕捉不到这一错误。
   const shadowMaterial = new THREE.NodeMaterial()
   const projectionReferences = new Set()
-  materials[0].colorNode.traverse(node => {
-    if (node.property?.startsWith('_buttonPrint.')) projectionReferences.add(node)
+  materials[0].colorNode.traverse((node) => {
+    if (node.property?.startsWith('_buttonPrint.'))
+      projectionReferences.add(node)
   })
   assert.equal(projectionReferences.size, 8)
   for (const object of printedMeshes) {
     for (const node of projectionReferences) {
-      node.updateReference({ material:shadowMaterial, object })
+      node.updateReference({ material: shadowMaterial, object })
       node.updateValue()
     }
     const indexNode = [...projectionReferences].find(node => node.property === '_buttonPrint.index')
@@ -39,7 +40,7 @@ try {
   const preview = new THREE.Mesh(previewGeometry, materials[0])
   preview.name = 'Needle Preview sphere'
   for (const node of projectionReferences) {
-    node.updateReference({ material:preview.material, object:preview })
+    node.updateReference({ material: preview.material, object: preview })
     node.updateValue()
   }
   assert.equal([...projectionReferences].find(node => node.property === '_buttonPrint.index').node.value, 0)
@@ -91,7 +92,10 @@ try {
   assert.equal(buttons.b.material.color.getHexString(), 'd2d0c1')
 
   const sources = ['a', 'b', 'x', 'y', 'dpad'].map((part, index) => ({
-    name: part, part, geometry, matrix: new THREE.Matrix4().makeTranslation(index * 3, 0, 0),
+    name: part,
+    part,
+    geometry,
+    matrix: new THREE.Matrix4().makeTranslation(index * 3, 0, 0),
     materials: [{ color: new THREE.Color('#ffffff'), side: THREE.FrontSide }],
   }))
   const classic = new ExhibitSample({ sources, width: 1, height: 1, buttonPrint: print, name: 'ClassicCheck' })
@@ -122,8 +126,10 @@ try {
   dpad.dispose()
   altered.dispose()
   shadowMaterial.dispose()
-} finally {
-  if (document === undefined) delete globalThis.document
+}
+finally {
+  if (document === undefined)
+    delete globalThis.document
   else globalThis.document = document
 }
 console.log('Button materials passed: shared graphs, independent projection/colors, nonuniform scale, D-Pad, distinct surfaces and resource ownership')

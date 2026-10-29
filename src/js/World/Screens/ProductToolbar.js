@@ -68,7 +68,7 @@ export default class ProductToolbar {
     }
     this.removeListeners = [
       ...['intro:state', 'product:mode', 'controller:theme', 'controller:themes-updated'].map(event => events.on(event, () => this.render())),
-      events.on('nds:state', info => { this.nds = info; this.render() }),
+      events.on('nds:state', (info) => { this.nds = info; this.render() }),
       events.on('game:unavailable', ({ message }) => this.showNotice(message)),
       events.on('product:help-request', ({ trigger }) => this.openHelp(trigger)),
     ]
@@ -100,7 +100,8 @@ export default class ProductToolbar {
     const options = { signal: this.listeners.signal }
     this.help.querySelector('button').addEventListener('click', () => this.help.close(), options)
     this.help.addEventListener('click', (event) => {
-      if (event.target === this.help) this.help.close()
+      if (event.target === this.help)
+        this.help.close()
     }, options)
     this.help.addEventListener('close', () => {
       this.events.emit('product:help', { open: false })
@@ -118,17 +119,21 @@ export default class ProductToolbar {
     }
     if (action === 'primary') {
       action = this.state.productMode === 'playing' || this.nds.loading
-        ? 'back' : this.state.introState !== 'ready' ? 'skip-intro' : 'continue'
+        ? 'back'
+        : this.state.introState !== 'ready' ? 'skip-intro' : 'continue'
     }
     this.events.emit('product:action', { action, options: { userGesture: true } })
-    if (action === 'replay-intro') this.canvas.focus({ preventScroll: true })
+    if (action === 'replay-intro')
+      this.canvas.focus({ preventScroll: true })
   }
 
   openHelp(trigger = this.buttons.help) {
-    if (this.help.open) return
+    if (this.help.open)
+      return
     this.helpTrigger = trigger
     // 模态说明打开前暂停游戏，并释放键盘、手柄与触控；关闭后由访客显式继续。
-    if (this.state.productMode === 'playing' || this.nds.loading) this.events.emit('product:action', { action: 'back' })
+    if (this.state.productMode === 'playing' || this.nds.loading)
+      this.events.emit('product:action', { action: 'back' })
     this.events.emit('product:help', { open: true })
     this.help.showModal()
   }
@@ -167,9 +172,13 @@ export default class ProductToolbar {
       colors[0].style.background = theme.shell
       colors[1].style.background = theme.buttons
     })
-    this.note.textContent = this.nds.loading || this.state.ndsStatus === 'error' ? this.nds.message
-      : playing ? '触控笔跟随鼠标 · 下屏点击或拖动 · Esc 暂停返回' : intro ? '展开 · 装配 · 双屏唤醒'
-        : '点击样品切换配色 · 拖动空白区域旋转 · 点击屏幕操作'
+    this.note.textContent = this.nds.loading || this.state.ndsStatus === 'error'
+      ? this.nds.message
+      : playing
+        ? '触控笔跟随鼠标 · 下屏点击或拖动 · Esc 暂停返回'
+        : intro
+          ? '展开 · 装配 · 双屏唤醒'
+          : '点击样品切换配色 · 拖动空白区域旋转 · 点击屏幕操作'
   }
 
   destroy() {

@@ -10,13 +10,18 @@ const PARTS = {
 
 export default class ExhibitAirPods {
   constructor({ gltf, debug, onLayout }) {
-    if (!gltf?.scene) throw new Error('airpodsModel 未返回有效的 GLTF Scene')
+    if (!gltf?.scene)
+      throw new Error('airpodsModel 未返回有效的 GLTF Scene')
     this.onLayout = onLayout
     this.params = {
       visible: true,
       scale: 2.5,
-      closedX: -1.23, closedZ: 0.86, closedYaw: -14,
-      openX: 1.32, openZ: 0.907, openYaw: -18,
+      closedX: -1.23,
+      closedZ: 0.86,
+      closedYaw: -14,
+      openX: 1.32,
+      openZ: 0.907,
+      openYaw: -18,
       openAngle: 115,
     }
     this.group = new THREE.Group()
@@ -25,13 +30,15 @@ export default class ExhibitAirPods {
     this.materials = new Set()
     this.textures = new Set()
     this.materialCopies = new Map()
-    gltf.scene.traverse(mesh => {
-      if (!mesh.isMesh) return
+    gltf.scene.traverse((mesh) => {
+      if (!mesh.isMesh)
+        return
       this.geometries.add(mesh.geometry)
       for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
         this.materials.add(material)
         for (const value of Object.values(material)) {
-          if (value?.isTexture) this.textures.add(value)
+          if (value?.isTexture)
+            this.textures.add(value)
         }
       }
     })
@@ -43,7 +50,8 @@ export default class ExhibitAirPods {
 
   getPart(model, key) {
     const part = model.getObjectByName(PARTS[key])
-    if (!part) throw new Error(`AirPods 模型缺少 ${key} 节点：${PARTS[key]}`)
+    if (!part)
+      throw new Error(`AirPods 模型缺少 ${key} 节点：${PARTS[key]}`)
     return part
   }
 
@@ -52,7 +60,8 @@ export default class ExhibitAirPods {
     display.name = open ? 'AirPodsOpenDisplay' : 'AirPodsClosedDisplay'
     const model = source.clone(true)
     // 新 GLB 已在 Y=0 上方平躺并封紧；闭盒保留导出姿态，只有右侧开盒整机立起。
-    if (open) model.rotation.x = Math.PI / 2
+    if (open)
+      model.rotation.x = Math.PI / 2
     const body = this.getPart(model, 'body')
     const lid = this.getPart(model, 'lid')
     const leftBud = this.getPart(model, 'leftBud')
@@ -60,7 +69,8 @@ export default class ExhibitAirPods {
     model.updateMatrixWorld(true)
     const bodyBounds = new THREE.Box3().setFromObject(body, true)
     const caseWidth = bodyBounds.getSize(new THREE.Vector3()).x
-    if (caseWidth <= 0) throw new Error('AirPods 盒身宽度无效')
+    if (caseWidth <= 0)
+      throw new Error('AirPods 盒身宽度无效')
 
     if (open) {
       this.openCover = lid
@@ -89,11 +99,12 @@ export default class ExhibitAirPods {
       rightBud.visible = false
     }
 
-    model.traverse(mesh => {
-      if (!mesh.isMesh) return
+    model.traverse((mesh) => {
+      if (!mesh.isMesh)
+        return
       mesh.castShadow = true
       mesh.receiveShadow = true
-      const convert = material => {
+      const convert = (material) => {
         if (!this.materialCopies.has(material)) {
           const copy = new THREE.MeshStandardNodeMaterial().copy(material)
           this.materialCopies.set(material, copy)
@@ -121,8 +132,9 @@ export default class ExhibitAirPods {
     model.updateMatrixWorld(true)
     const bounds = new THREE.Box3()
     const point = new THREE.Vector3()
-    model.traverseVisible(mesh => {
-      if (!mesh.isMesh) return
+    model.traverseVisible((mesh) => {
+      if (!mesh.isMesh)
+        return
       // 只在静态摆放时测量精确顶点，避免旋转后的保守 AABB 把最低点算低、让耳机悬空。
       const positions = mesh.geometry.attributes.position
       for (let i = 0; i < positions.count; i++) {
@@ -138,7 +150,8 @@ export default class ExhibitAirPods {
   }
 
   applyLayout() {
-    if (!this.layout) return
+    if (!this.layout)
+      return
     const { width: w, depth: d, centerX, centerZ, floorY } = this.layout
     this.group.visible = this.params.visible && !this.compact
     for (const [prefix, group] of [['closed', this.closed], ['open', this.open]]) {
@@ -156,7 +169,8 @@ export default class ExhibitAirPods {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Exhibit AirPods', expanded: false })
     this.folder.addBinding(this.params, 'visible', { label: 'Visible' }).on('change', () => this.applyLayout())
     this.folder.addBinding(this.params, 'scale', { label: 'Shared scale', min: 1, max: 4, step: 0.1 }).on('change', () => this.applyLayout())

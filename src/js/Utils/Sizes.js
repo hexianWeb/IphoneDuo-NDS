@@ -21,7 +21,8 @@ export default class Sizes {
   handleResize() {
     const { width, height, pixelRatio } = this
     this.updateValues()
-    if (width === this.width && height === this.height && pixelRatio === this.pixelRatio) return
+    if (width === this.width && height === this.height && pixelRatio === this.pixelRatio)
+      return
     this.resizeCallbacks.forEach(callback => callback(this))
   }
 

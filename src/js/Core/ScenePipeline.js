@@ -1,7 +1,7 @@
-import { RedFormat, RenderPipeline, UnsignedByteType, Vector2 } from 'three/webgpu'
-import { builtinAOContext, mrt, normalViewGeometry, pass, rtt, screenUV, vec4 } from 'three/tsl'
-import { ao } from 'three/addons/tsl/display/GTAONode.js'
 import { denoise } from 'three/addons/tsl/display/DenoiseNode.js'
+import { ao } from 'three/addons/tsl/display/GTAONode.js'
+import { builtinAOContext, mrt, normalViewGeometry, pass, rtt, screenUV, vec4 } from 'three/tsl'
+import { RedFormat, RenderPipeline, UnsignedByteType, Vector2 } from 'three/webgpu'
 
 export default class ScenePipeline {
   constructor(renderer, scene, camera, debug) {
@@ -70,7 +70,8 @@ export default class ScenePipeline {
   }
 
   update() {
-    if (this.params.enabled) this.pipeline.render()
+    if (this.params.enabled)
+      this.pipeline.render()
     // 完全旁路预通道与 AO，关闭时也能比较真实 GPU 开销。
     else this.renderer.render(this.scene, this.camera)
   }
@@ -87,12 +88,13 @@ export default class ScenePipeline {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'GTAO', expanded: false })
     this.folder.addBinding(this.params, 'enabled', { label: 'Enabled' })
     this.folder.addBinding(this.params, 'view', {
       label: 'View',
-      options: { Scene: 'scene', 'Raw AO': 'raw', 'Denoised AO': 'filtered' },
+      options: { 'Scene': 'scene', 'Raw AO': 'raw', 'Denoised AO': 'filtered' },
     }).on('change', () => this.setOutput())
     const ranges = {
       radius: { min: 0.01, max: 0.5, step: 0.005 },

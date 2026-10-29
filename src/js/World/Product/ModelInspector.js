@@ -185,7 +185,8 @@ export default class ModelInspector {
 
     this.partAxes.forEach((helper) => {
       helper.visible = this.params.showAllPartAxes
-      if (!helper.visible) return
+      if (!helper.visible)
+        return
       const targetNode = helper.userData.targetNode
       targetNode.getWorldPosition(this.tempPosition)
       targetNode.getWorldQuaternion(this.tempQuaternion)
@@ -196,7 +197,8 @@ export default class ModelInspector {
   }
 
   updateReadout(force = false) {
-    if (!force && !this.debug.ui.expanded) return
+    if (!force && !this.debug.ui.expanded)
+      return
     const now = performance.now()
     if (!force && now - this.lastPanelRefresh < 100)
       return

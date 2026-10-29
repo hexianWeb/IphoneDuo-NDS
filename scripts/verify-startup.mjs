@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 import { createServer, preview } from 'vite'
 
 // 独立服务/浏览器验收正式代码；只暴露实例和观测首帧，不改 shader 或管线准备逻辑。
@@ -18,18 +18,17 @@ const configFile = join(projectRoot, 'vite.config.js')
 const snapshotRoot = process.env.DUO_BUTTON_SNAPSHOT
 const labelSnapshotRoot = process.env.DUO_LABEL_SNAPSHOT
 assert.ok(!production || (!snapshotRoot && !labelSnapshotRoot), '生产检查不允许响应替换')
-const snapshots = snapshotRoot ? await Promise.all(['ButtonPrint.js', 'ControllerButtonMaterial.js']
-  .map(async name => [`/src/js/World/Product/${name}`, await readFile(join(snapshotRoot, name), 'utf8')])) : []
+const snapshots = snapshotRoot
+  ? await Promise.all(['ButtonPrint.js', 'ControllerButtonMaterial.js']
+      .map(async name => [`/src/js/World/Product/${name}`, await readFile(join(snapshotRoot, name), 'utf8')]))
+  : []
 if (labelSnapshotRoot) {
-  const paths = ['src/js/sources.js', ...['ExhibitLabel', 'Exhibition', 'PartsDisplay', 'ColorDock',
-    'ExhibitProps', 'InternalComponentsDisplay', 'GameLibraryDisplay'].map(name => `src/js/World/Environment/${name}.js`)]
+  const paths = ['src/js/sources.js', ...['ExhibitLabel', 'Exhibition', 'PartsDisplay', 'ColorDock', 'ExhibitProps', 'InternalComponentsDisplay', 'GameLibraryDisplay'].map(name => `src/js/World/Environment/${name}.js`)]
   snapshots.push(...await Promise.all(paths.map(async path => [`/${path}`, await readFile(join(labelSnapshotRoot, path), 'utf8')])))
 }
 const server = production
   ? await preview({ configFile, preview: { host: '127.0.0.1', port: 0, strictPort: true, open: false } })
-  : await createServer({ configFile, cacheDir: join(output, 'vite-cache'),
-    server: { host: '127.0.0.1', port: 0, strictPort: true, open: false, hmr: false },
-    plugins: [{
+  : await createServer({ configFile, cacheDir: join(output, 'vite-cache'), server: { host: '127.0.0.1', port: 0, strictPort: true, open: false, hmr: false }, plugins: [{
       name: 'startup-verification-observers',
       transform(code, id) {
         const path = id.split('?')[0].replaceAll('\\', '/')
@@ -46,15 +45,16 @@ if (observedRedraw) ExhibitLabel.prototype.redraw = function (...args) {
 }
 `
         }
-        if (snapshot) return snapshot[1]
-        if (path.endsWith('/src/js/Experience.js')) return `${code}\nwindow.__DUO_STARTUP__.Experience = Experience\n`
+        if (snapshot)
+          return snapshot[1]
+        if (path.endsWith('/src/js/Experience.js'))
+          return `${code}\nwindow.__DUO_STARTUP__.Experience = Experience\n`
         if (path.endsWith('/src/js/World/World.js')) {
           assert.ok(code.includes('start() {'), '未找到首帧观测入口')
           return code.replace('start() {', 'start() { window.__DUO_STARTUP__.onStart(this)')
         }
       },
-    }],
-  })
+    }] })
 if (!production) {
   await server.listen()
   // 在导航前启动模块图，避免把开发依赖扫描的首次动态导入竞争误计为渲染耗时。
@@ -65,13 +65,11 @@ const port = server.httpServer.address().port
 const site = `http://127.0.0.1:${port}`
 function installObservers() {
   const probe = { pipelines: [], gpuErrors: [], firstFrames: [], phasesAtDestroy: [], labelRedraws: [] }
-  probe.onStart = world => {
+  probe.onStart = (world) => {
     const rig = world.product.productRig
     const screens = world.screenManager
-    probe.firstFrames.push({ angle: rig.params.productAngle, tilt: rig.params.displayTilt,
-      controllerVisible: rig.controllerAssembly.controller.visible, mode: screens.mode,
-      screens: Object.fromEntries(Object.entries(screens.screens).map(([key, mesh]) => [key, mesh.visible])) })
-    probe.initialLabelRedraws = probe.labelRedraws.map(record => ({...record}))
+    probe.firstFrames.push({ angle: rig.params.productAngle, tilt: rig.params.displayTilt, controllerVisible: rig.controllerAssembly.controller.visible, mode: screens.mode, screens: Object.fromEntries(Object.entries(screens.screens).map(([key, mesh]) => [key, mesh.visible])) })
+    probe.initialLabelRedraws = probe.labelRedraws.map(record => ({ ...record }))
   }
   for (const method of ['createRenderPipeline', 'createRenderPipelineAsync']) {
     const original = GPUDevice.prototype[method]
@@ -95,13 +93,20 @@ function installObservers() {
   }
   new MutationObserver(() => {
     const state = document.querySelector('.status-panel')?.dataset.state
-    if (state === 'complete' && probe.completedAt === undefined) probe.completedAt = performance.now()
+    if (state === 'complete' && probe.completedAt === undefined)
+      probe.completedAt = performance.now()
   }).observe(document, { subtree: true, attributes: true, attributeFilter: ['data-state'] })
   window.__DUO_STARTUP__ = probe
 }
 const chrome = spawn(chromePath, [
-  '--headless=new', '--enable-unsafe-webgpu', '--ignore-gpu-blocklist', '--no-first-run', '--no-default-browser-check',
-  '--remote-debugging-port=0', `--user-data-dir=${join(output, 'profile')}`, 'about:blank',
+  '--headless=new',
+  '--enable-unsafe-webgpu',
+  '--ignore-gpu-blocklist',
+  '--no-first-run',
+  '--no-default-browser-check',
+  '--remote-debugging-port=0',
+  `--user-data-dir=${join(output, 'profile')}`,
+  'about:blank',
 ], { stdio: 'ignore', windowsHide: true })
 let socket
 let nextId = 0
@@ -110,29 +115,35 @@ const errors = []
 const warnings = []
 const networkFailures = []
 const requests = new Map()
-const send = (method, params = {}) => new Promise((resolve, reject) => {
-  const id = ++nextId
-  const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 120000)
-  pending.set(id, { resolve, reject, timer })
-  socket.send(JSON.stringify({ id, method, params }))
-})
-const evaluate = async expression => {
+function send(method, params = {}) {
+  return new Promise((resolve, reject) => {
+    const id = ++nextId
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)) }, 120000)
+    pending.set(id, { resolve, reject, timer })
+    socket.send(JSON.stringify({ id, method, params }))
+  })
+}
+async function evaluate(expression) {
   const response = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
-  if (response.exceptionDetails) throw new Error(JSON.stringify(response.exceptionDetails))
+  if (response.exceptionDetails)
+    throw new Error(JSON.stringify(response.exceptionDetails))
   return response.result.value
 }
-const waitFor = async (expression, label) => {
+async function waitFor(expression, label) {
   const until = Date.now() + 120000
   do {
-    if (await evaluate(expression)) return
-    if (errors.length) throw new Error(JSON.stringify(errors))
+    if (await evaluate(expression))
+      return
+    if (errors.length)
+      throw new Error(JSON.stringify(errors))
     const detail = await evaluate(`document.querySelector('.status-panel')?.dataset.state === 'error' && document.querySelector('.status-detail')?.textContent`)
-    if (detail) throw new Error(detail)
+    if (detail)
+      throw new Error(detail)
     await delay(100)
   } while (Date.now() < until)
   throw new Error(`等待超时：${label}`)
 }
-const screenshot = async name => {
+async function screenshot(name) {
   const { data } = await send('Page.captureScreenshot', { format: 'png' })
   await writeFile(join(output, `${name}.png`), Buffer.from(data, 'base64'))
 }
@@ -142,8 +153,10 @@ try {
     try {
       const port = (await readFile(join(output, 'profile/DevToolsActivePort'), 'utf8')).split('\n')[0].trim()
       target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find(page => page.type === 'page')
-      if (target) break
-    } catch {}
+      if (target)
+        break
+    }
+    catch {}
     await delay(300)
   }
   assert.ok(target, 'Chrome CDP 未启动')
@@ -156,22 +169,35 @@ try {
     const event = JSON.parse(data)
     if (event.id) {
       const item = pending.get(event.id)
-      if (!item) return
+      if (!item)
+        return
       clearTimeout(item.timer)
       pending.delete(event.id)
-      if (event.error) item.reject(new Error(JSON.stringify(event.error)))
+      if (event.error)
+        item.reject(new Error(JSON.stringify(event.error)))
       else item.resolve(event.result)
-    } else if (event.method === 'Network.requestWillBeSent') requests.set(event.params.requestId, event.params.request.url)
-    else if (event.method === 'Network.loadingFailed') networkFailures.push({ ...event.params, url:requests.get(event.params.requestId) })
-    else if (event.method === 'Runtime.exceptionThrown') errors.push(event.params.exceptionDetails)
+    }
+    else if (event.method === 'Network.requestWillBeSent') {
+      requests.set(event.params.requestId, event.params.request.url)
+    }
+    else if (event.method === 'Network.loadingFailed') {
+      networkFailures.push({ ...event.params, url: requests.get(event.params.requestId) })
+    }
+    else if (event.method === 'Runtime.exceptionThrown') {
+      errors.push(event.params.exceptionDetails)
+    }
     else if (event.method === 'Runtime.consoleAPICalled') {
       const text = event.params.args.map(arg => arg.value || arg.description).join(' ')
-      if (event.params.type === 'error') errors.push(text)
-      else if (event.params.type === 'warning') warnings.push(text)
-    } else if (event.method === 'Log.entryAdded' && event.params.entry.level === 'error') {
+      if (event.params.type === 'error')
+        errors.push(text)
+      else if (event.params.type === 'warning')
+        warnings.push(text)
+    }
+    else if (event.method === 'Log.entryAdded' && event.params.entry.level === 'error') {
       const entry = event.params.entry
       // 浏览器自动请求的站点图标与渲染无关；保留记录，但不把它归为应用或 GPU 错误。
-      if (entry.source === 'network' && entry.url === `${site}/favicon.ico`) warnings.push(entry)
+      if (entry.source === 'network' && entry.url === `${site}/favicon.ico`)
+        warnings.push(entry)
       else errors.push(entry)
     }
   })
@@ -180,8 +206,7 @@ try {
   await send('Log.enable')
   await send('Network.enable')
   await send('Page.addScriptToEvaluateOnNewDocument', { source: `(${installObservers.toString()})()` })
-  await send('Emulation.setDeviceMetricsOverride', { width: mode === 'layout' ? 1166 : 1920,
-    height: mode === 'layout' ? 1031 : 1080, deviceScaleFactor: 1, mobile: false })
+  await send('Emulation.setDeviceMetricsOverride', { width: mode === 'layout' ? 1166 : 1920, height: mode === 'layout' ? 1031 : 1080, deviceScaleFactor: 1, mobile: false })
   await send('Page.navigate', { url: `${site}/${production ? '' : '?performance'}` })
   if (mode === 'resize' || mode === 'destroy') {
     await waitFor(`__DUO_STARTUP__.Experience?.instance?.renderer?.preparation?.running
@@ -189,7 +214,8 @@ try {
       && __DUO_STARTUP__.pipelines.some(p => p.phase === 'warmup-phone' && p.preparing && p.pending)`, '真实多通道异步编译')
     if (mode === 'resize') {
       await send('Emulation.setDeviceMetricsOverride', { width: 1200, height: 900, deviceScaleFactor: 1, mobile: false })
-    } else {
+    }
+    else {
       const destroyed = await evaluate(`(() => {
          const p = __DUO_STARTUP__, e = p.Experience.instance
          p.old = e
@@ -211,19 +237,22 @@ try {
         p.restart.catch(() => {})
         return snapshot
       })()`)
-       assert.deepEqual(destroyed, { initialized: false, starts: 0, hooked: false })
-      if (!labelSnapshotRoot) assert.ok(await evaluate('__DUO_STARTUP__.labelDisposals.length === 8 && __DUO_STARTUP__.labelDisposals.every(t=>t.count===1)'),
-        '编译中销毁必须将八张离线标签纹理各释放一次')
+      assert.deepEqual(destroyed, { initialized: false, starts: 0, hooked: false })
+      if (!labelSnapshotRoot) {
+        assert.ok(await evaluate('__DUO_STARTUP__.labelDisposals.length === 8 && __DUO_STARTUP__.labelDisposals.every(t=>t.count===1)'), '编译中销毁必须将八张离线标签纹理各释放一次')
+      }
       await evaluate('__DUO_STARTUP__.restart.then(() => true)')
       await waitFor(`__DUO_STARTUP__.old.renderer.preparing === false && __DUO_STARTUP__.pipelines.every(p => !p.pending)`, '销毁后迟到任务收束')
       assert.equal(await evaluate('__DUO_STARTUP__.old.initialized'), false, '旧实例不能迟到发布就绪')
     }
   }
-  await waitFor(production ? `document.querySelector('.status-panel')?.hidden === true`
+  await waitFor(production
+    ? `document.querySelector('.status-panel')?.hidden === true`
     : `__DUO_STARTUP__.Experience?.instance?.initialized === true`, '产品启动')
   if (production) {
     await screenshot('production')
-  } else {
+  }
+  else {
     const first = await evaluate('__DUO_STARTUP__.firstFrames.at(-1)')
     assert.equal(first.angle, 8, '首帧必须回到 Folded，不闪现装配态')
     assert.equal(first.tilt, 0)
@@ -242,12 +271,12 @@ try {
           parts:x.parts.visible, dock:x.dock.visible, airpods:x.airpods.group.visible,
           internal:x.internalComponents.group.visible, library:x.gameLibrary.group.visible }
       })()`)
-      assert.ok(['parts','dock','airpods','internal','library'].every(key => layout[key]),
-        '桌面画布不能整组隐藏展品：' + JSON.stringify(layout))
+      assert.ok(['parts', 'dock', 'airpods', 'internal', 'library'].every(key => layout[key]), `桌面画布不能整组隐藏展品：${JSON.stringify(layout)}`)
     }
     assert.deepEqual(startup.warmups.map(w => w.phase), ['warmup-phone', 'warmup-game-home', 'warmup-playing', 'warmup-folded'])
     assert.ok(startup.warmups[0].preparedPipelines > 100)
-    if (mode === 'resize') assert.ok(startup.warmups.some(w => w.resizeRestarts > 0), '必须验证预热内延迟 resize')
+    if (mode === 'resize')
+      assert.ok(startup.warmups.some(w => w.resizeRestarts > 0), '必须验证预热内延迟 resize')
     await waitFor(`document.querySelector('.status-panel').hidden === true`, 'Loading 遮罩退出')
     await evaluate('experience.world.intro.skip()')
     await delay(1200)
@@ -279,7 +308,8 @@ try {
           transparent:label.material.transparent, depthWrite:label.material.depthWrite, anisotropy:label.texture.anisotropy}))
       })()`)
       assert.equal(labels.length, 6)
-      if (!labelSnapshotRoot) assert.ok(labels.every(label => !label.canvas), '离线标签不应创建 CanvasTexture')
+      if (!labelSnapshotRoot)
+        assert.ok(labels.every(label => !label.canvas), '离线标签不应创建 CanvasTexture')
       // 仅验收工具创建导出 Canvas，产品路径不执行此代码；保留可逐像素比较的源图。
       const images = await evaluate(`(() => {
         const x = experience.world.exhibition
@@ -341,11 +371,12 @@ try {
           if (label.textures && label.canvas) throw new Error('恢复预设后应释放自定义标签 Canvas')
         }
       })()`)
-      for (const check of validation.checks) assert.ok(check.actual.every((value, channel) => Math.abs(value - check.expected[channel]) <= 2),
-        '实际 GPU 标签颜色/下划线不符：' + JSON.stringify(check))
+      for (const check of validation.checks) {
+        assert.ok(check.actual.every((value, channel) => Math.abs(value - check.expected[channel]) <= 2), `实际 GPU 标签颜色/下划线不符：${JSON.stringify(check)}`)
+      }
       if (!labelSnapshotRoot) {
         assert.deepEqual(validation.after, validation.versions, '预设切换不得更新离线贴图版本')
-        assert.deepEqual(validation.presetCanvases, [false,false,false])
+        assert.deepEqual(validation.presetCanvases, [false, false, false])
         assert.equal(validation.customCanvas, true, '自定义配色保留按需画布')
         assert.equal(validation.afterMaterialVersion, validation.materialVersion, '换色不得重编译标签材质')
       }
@@ -362,18 +393,18 @@ try {
       })()`
       const states = [await evaluate(state)]
       for (const size of [
-        {width:390, height:844, compact:true, name:'mobile'},
-        {width:720, height:1031, compact:true, name:'breakpoint-720'},
-        {width:721, height:1031, compact:false, name:'breakpoint-721'},
-        {width:1166, height:1031, compact:false, name:'desktop-restored'},
+        { width: 390, height: 844, compact: true, name: 'mobile' },
+        { width: 720, height: 1031, compact: true, name: 'breakpoint-720' },
+        { width: 721, height: 1031, compact: false, name: 'breakpoint-721' },
+        { width: 1166, height: 1031, compact: false, name: 'desktop-restored' },
       ]) {
-        await send('Emulation.setDeviceMetricsOverride', {width:size.width, height:size.height, deviceScaleFactor:1, mobile:false})
+        await send('Emulation.setDeviceMetricsOverride', { width: size.width, height: size.height, deviceScaleFactor: 1, mobile: false })
         await waitFor(`experience.sizes.width === ${size.width} && experience.world.exhibition.params.compact === ${size.compact}`, size.name)
         // 前面已暂停主循环，resize 后显式走正式预热/重绘路径，不只断言属性而保存空白截图。
         assert.equal(await evaluate('experience.renderer.warmup()'), true)
         const current = await evaluate(state)
         states.push(current)
-        assert.ok(['parts','dock','airpods','internal','library'].every(key => current[key] === !size.compact))
+        assert.ok(['parts', 'dock', 'airpods', 'internal', 'library'].every(key => current[key] === !size.compact))
         await screenshot(`layout-${size.name}`)
       }
       await evaluate(`__DUO_STARTUP__.layouts = ${JSON.stringify(states)}`)
@@ -404,7 +435,7 @@ try {
           return { main:w.product.buttons.a.material.color.getHexString(),
             samples:w.exhibition.colorDock.samples.map(s => s.buttonMaterials.filter(b => b.part === 'a').map(b => b.material.color.getHexString())) }
         })()`)
-        assert.equal(colors.main, details.sampleColors[['classic','retro','midnight'].indexOf(theme)][0])
+        assert.equal(colors.main, details.sampleColors[['classic', 'retro', 'midnight'].indexOf(theme)][0])
         assert.deepEqual(colors.samples.flat(), details.sampleColors.map(list => list[0]), '主机换色不得改动独立样品')
         for (const view of ['hero', 'play']) {
           await evaluate(`experience.world.cameraDirector.transitionTo('${view}', {immediate:true});
@@ -438,8 +469,7 @@ try {
   })()`)
   Object.assign(report, { mode, output, snapshotRoot, labelSnapshotRoot, errors, warnings, networkFailures })
   await writeFile(join(output, 'report.json'), JSON.stringify(report, null, 2))
-  console.log(JSON.stringify({ mode, output, loadMs:report.monitor?.loadMs, completedAt:report.completedAt,
-    warmups:report.monitor?.warmups, viewport:report.viewport, errors, gpuErrors:report.gpuErrors }, null, 2))
+  console.log(JSON.stringify({ mode, output, loadMs: report.monitor?.loadMs, completedAt: report.completedAt, warmups: report.monitor?.warmups, viewport: report.viewport, errors, gpuErrors: report.gpuErrors }, null, 2))
   assert.match(report.engine, /\bwebgpu$/)
   assert.equal(report.gpuErrors.length, 0)
   assert.equal(errors.length, 0)
@@ -453,23 +483,28 @@ try {
     // Three 内置的少数 mipmap 小管线仍由纹理工具同步创建；本项检查实际材质/通道管线。
     assert.equal(report.pipelines.filter(p => p.preparing && p.method === 'createRenderPipeline' && p.label?.startsWith('renderPipeline_')).length, 0)
   }
-} catch (error) {
+}
+catch (error) {
   let diagnostic
   try {
     diagnostic = await evaluate(`({state:document.querySelector('.status-panel')?.outerHTML,
       gpuErrors:__DUO_STARTUP__?.gpuErrors, pipelines:__DUO_STARTUP__?.pipelines})`)
     await screenshot('failure')
-  } catch {}
-  await writeFile(join(output, 'failure.json'), JSON.stringify({ message:error.message, diagnostic, errors, warnings, networkFailures }, null, 2))
+  }
+  catch {}
+  await writeFile(join(output, 'failure.json'), JSON.stringify({ message: error.message, diagnostic, errors, warnings, networkFailures }, null, 2))
   console.error('STARTUP_FAILURE', output)
   throw error
-} finally {
+}
+finally {
   if (socket?.readyState === 1) {
-    try { await send('Browser.close') } catch {}
+    try { await send('Browser.close') }
+    catch {}
     socket.close()
   }
   chrome.kill()
   for (const item of pending.values()) clearTimeout(item.timer)
-  if (production) await new Promise(resolve => server.httpServer.close(resolve))
+  if (production)
+    await new Promise(resolve => server.httpServer.close(resolve))
   else await server.close()
 }

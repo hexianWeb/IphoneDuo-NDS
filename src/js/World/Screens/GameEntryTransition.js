@@ -1,7 +1,7 @@
 import { gsap } from 'gsap'
 import { uniform } from 'three/tsl'
-import { getScreenUvAspect } from './NDSGameSurface.js'
 import GameEntrySound from './GameEntrySound.js'
+import { getScreenUvAspect } from './NDSGameSurface.js'
 
 export default class GameEntryTransition {
   constructor(screen, debug) {
@@ -12,7 +12,8 @@ export default class GameEntryTransition {
     this.params = { closeDuration: 0.48, openDuration: 0.62 }
     this.generation = 0
     this.sound = new GameEntrySound()
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'NDS Entry Transition', expanded: false })
     for (const key of ['closeDuration', 'openDuration']) {
       this.folder.addBinding(this.params, key, { min: 0.15, max: 1.5, step: 0.01 })
@@ -30,7 +31,8 @@ export default class GameEntryTransition {
   }
 
   animate(opening) {
-    if (this.destroyed) return Promise.resolve(false)
+    if (this.destroyed)
+      return Promise.resolve(false)
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const duration = reduced ? 0.08 : this.params[opening ? 'openDuration' : 'closeDuration']
     this.sound.play(opening, duration)

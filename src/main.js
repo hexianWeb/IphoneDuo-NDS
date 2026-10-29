@@ -1,5 +1,5 @@
-import Experience from './js/Experience.js'
 import LoadingScreen from './js/Core/LoadingScreen.js'
+import Experience from './js/Experience.js'
 import './style.css'
 
 const canvas = document.querySelector('.webgl')
@@ -27,10 +27,12 @@ async function start() {
 
   try {
     await experience.init()
-    if (!experience.destroyed) loading.complete()
+    if (!experience.destroyed)
+      loading.complete()
   }
   catch (error) {
-    if (experience.destroyed) return
+    if (experience.destroyed)
+      return
     console.error(error)
     experience.destroy()
     canvas.hidden = true

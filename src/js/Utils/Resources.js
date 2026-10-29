@@ -1,6 +1,6 @@
-import * as THREE from 'three/webgpu'
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import * as THREE from 'three/webgpu'
 import Experience from '../Experience.js'
 
 export default class Resources {
@@ -21,7 +21,9 @@ export default class Resources {
     let loaded = 0
     const fractions = new Map(this.sources.map(source => [source.name, 0]))
     const report = name => this.events.emit('resources:progress', {
-      loaded, total, name,
+      loaded,
+      total,
+      name,
       progress: [...fractions.values()].reduce((sum, value) => sum + value, 0) / Math.max(1, total),
     })
 
@@ -41,7 +43,8 @@ export default class Resources {
       try {
         this.items[source.name] = await loader.loadAsync(source.path, (event) => {
           // 有 Content-Length 才显示传输进度；预留解码阶段，不把下载完成当成资源可用。
-          if (!event.total) return
+          if (!event.total)
+            return
           fractions.set(source.name, Math.max(fractions.get(source.name), Math.min(0.95, event.loaded / event.total * 0.95)))
           report(source.name)
         })

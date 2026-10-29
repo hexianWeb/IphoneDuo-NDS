@@ -1,11 +1,11 @@
-import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
-import Experience from '../../Experience.js'
+import * as THREE from 'three/webgpu'
 import {
   foldedPhoneColor,
   gameChangerTopColor,
   screenIrisMask,
 } from '../../../shaders/screenEffects.js'
+import Experience from '../../Experience.js'
 
 export default class PhoneScreenSurface {
   constructor({
@@ -214,7 +214,8 @@ export default class PhoneScreenSurface {
       this.phoneUniforms.top,
       this.transitionUniforms,
     )
-    if (this.entryUniforms) topColor = topColor.mul(screenIrisMask(this.entryUniforms))
+    if (this.entryUniforms)
+      topColor = topColor.mul(screenIrisMask(this.entryUniforms))
     const bottomColor = foldedPhoneColor(bottomTexture, this.phoneUniforms.bottom)
 
     this.topMaterial.colorNode = topColor.mul(this.phoneUniforms.top.diffuse)
@@ -230,14 +231,16 @@ export default class PhoneScreenSurface {
   }
 
   setProductAngle(angle) {
-    if (this.productAngle === angle) return
+    if (this.productAngle === angle)
+      return
     this.productAngle = angle
     this.applyFoldEffect()
   }
 
   setWakeProgress(progress) {
     const value = THREE.MathUtils.clamp(progress, 0, 1)
-    if (this.phoneWakeProgress === value) return
+    if (this.phoneWakeProgress === value)
+      return
     this.phoneWakeProgress = value
     this.applyFoldEffect()
   }
@@ -322,19 +325,29 @@ export default class PhoneScreenSurface {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const phoneFolder = this.debug.ui.addFolder({
       title: 'Phone Screens',
       expanded: true,
     })
     phoneFolder.addBinding(this.params, 'phoneBrightness', {
-      label: 'Brightness', min: 0, max: 2, step: 0.01,
+      label: 'Brightness',
+      min: 0,
+      max: 2,
+      step: 0.01,
     }).on('change', () => this.applySurfaceSettings())
     phoneFolder.addBinding(this.params, 'phoneDiffuseDetail', {
-      label: 'Diffuse detail', min: 0, max: 1, step: 0.01,
+      label: 'Diffuse detail',
+      min: 0,
+      max: 1,
+      step: 0.01,
     }).on('change', () => this.applySurfaceSettings())
     phoneFolder.addBinding(this.params, 'phoneRoughness', {
-      label: 'Roughness', min: 0, max: 1, step: 0.01,
+      label: 'Roughness',
+      min: 0,
+      max: 1,
+      step: 0.01,
     }).on('change', () => this.applySurfaceSettings())
 
     const orientation = phoneFolder.addFolder({ title: 'UI orientation' })
@@ -364,7 +377,8 @@ export default class PhoneScreenSurface {
     Object.entries(foldRanges).forEach(([key, [min, max, step]]) => {
       foldFolder.addBinding(this.params, key, { label: key, min, max, step })
         .on('change', () => {
-          if (key === 'foldPreviewAngle') this.previewFoldEffect()
+          if (key === 'foldPreviewAngle')
+            this.previewFoldEffect()
           else this.applyFoldEffect()
         })
     })

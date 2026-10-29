@@ -1,5 +1,5 @@
-import * as THREE from 'three/webgpu'
 import { materialReference, modelWorldMatrix, normalView, positionLocal, uniform } from 'three/tsl'
+import * as THREE from 'three/webgpu'
 import { filteredPlasticNoise, plasticSurfaceNormal } from '../../../shaders/controllerPlastic.js'
 import { getButtonFrame } from './ButtonPrint.js'
 
@@ -86,7 +86,8 @@ export default class ControllerButtonMaterial {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Controller Button Plastic', expanded: false })
     const ranges = {
       roughness: [0.08, 0.6, 0.01],

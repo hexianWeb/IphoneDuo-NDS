@@ -26,7 +26,10 @@ assert.deepEqual(bottomPixels, { x: -128, y: -32, width: 768, height: 576, pixel
 // Canvas 像素输出由浏览器检查；此处验证真实 Three Texture 矩阵与触控的闭环。
 globalThis.document = {
   createElement: () => ({ getContext: () => ({
-    fillRect() {}, drawImage() {}, save() {}, restore() {},
+    fillRect() {},
+    drawImage() {},
+    save() {},
+    restore() {},
   }) }),
 }
 for (const options of [
@@ -41,7 +44,8 @@ for (const options of [
       (surface.rect.x + (x + 0.5) / 256 * surface.rect.width) / surface.canvas.width,
       (surface.rect.y + (y + 0.5) / 192 * surface.rect.height) / surface.canvas.height,
     )
-    if (options.flipY) canvasUv.y = 1 - canvasUv.y
+    if (options.flipY)
+      canvasUv.y = 1 - canvasUv.y
     const meshUv = canvasUv.applyMatrix3(inverse)
     assert.deepEqual(surface.getTouchAtUv(meshUv), { x, y })
   }

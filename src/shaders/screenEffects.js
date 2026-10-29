@@ -22,7 +22,8 @@ function sampleScreen(textureValue, sampleUv, applyTextureMatrix) {
   const textureNode = texture(textureValue, sampleUv)
   // 传入自定义 UV 时 TextureNode 默认不乘 texture.matrix。
   // Game Mode 的旋转 / 镜像写在 Texture 上，采样时必须显式打开。
-  if (applyTextureMatrix) textureNode.setUpdateMatrix(true)
+  if (applyTextureMatrix)
+    textureNode.setUpdateMatrix(true)
   return textureNode
 }
 

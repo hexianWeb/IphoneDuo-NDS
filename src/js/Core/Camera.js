@@ -38,7 +38,8 @@ export default class Camera {
   }
 
   debugInit() {
-    if (!this.debug.ui) return
+    if (!this.debug.ui)
+      return
     const folder = this.debug.ui.addFolder({ title: 'Camera', expanded: false })
     folder.addBinding(this.params, 'fov', {
       label: 'FOV',

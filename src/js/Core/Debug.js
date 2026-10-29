@@ -8,9 +8,11 @@ export default class Debug {
   }
 
   async init() {
-    if (!this.enabled) return
+    if (!this.enabled)
+      return
     const { Pane } = await import('tweakpane')
-    if (this.destroyed) return
+    if (this.destroyed)
+      return
     this.ui = new Pane({ container: this.container, title: 'iPhone Duo · WebGPU', expanded: false })
   }
 

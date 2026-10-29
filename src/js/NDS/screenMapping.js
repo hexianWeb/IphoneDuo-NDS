@@ -1,4 +1,4 @@
-import { NDS_WIDTH, NDS_HEIGHT } from './NDSRuntime.js'
+import { NDS_HEIGHT, NDS_WIDTH } from './NDSRuntime.js'
 
 export function getContainRect(width, height) {
   const scale = Math.min(width / NDS_WIDTH, height / NDS_HEIGHT)
@@ -42,6 +42,7 @@ export function canvasUvToTouch(uv, width, height, rect) {
   const x = (uv.x * width - rect.x) / rect.width
   const y = (uv.y * height - rect.y) / rect.height
   // 黑边不产生触控，右/下边界也不能溢出到 256 / 192。
-  if (x < 0 || x >= 1 || y < 0 || y >= 1) return null
+  if (x < 0 || x >= 1 || y < 0 || y >= 1)
+    return null
   return { x: Math.floor(x * NDS_WIDTH), y: Math.floor(y * NDS_HEIGHT) }
 }

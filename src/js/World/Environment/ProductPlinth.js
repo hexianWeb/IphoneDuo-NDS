@@ -1,5 +1,5 @@
-import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
+import * as THREE from 'three/webgpu'
 import { plinthSurfaceNodes } from '../../../shaders/plinthSurface.js'
 import { createPlinthGeometry } from './exhibitionGeometry.js'
 
@@ -20,7 +20,10 @@ export default class ProductPlinth {
     this.material.normalNode = surface.normal
     this.material.roughnessNode = surface.roughness
     this.trimMaterial = new THREE.MeshStandardNodeMaterial({
-      color: '#f9e2bc', emissive: '#ffe2ac', emissiveIntensity: 0.8, roughness: 0.5,
+      color: '#f9e2bc',
+      emissive: '#ffe2ac',
+      emissiveIntensity: 0.8,
+      roughness: 0.5,
     })
     this.body = new THREE.Mesh(new THREE.BufferGeometry(), this.material)
     this.body.name = 'PlinthBody'
@@ -98,7 +101,8 @@ export default class ProductPlinth {
   }
 
   debugInit(debug) {
-    if (!debug?.ui) return
+    if (!debug?.ui)
+      return
     this.folder = debug.ui.addFolder({ title: 'Plinth Surface / Warm Spill', expanded: false })
     const surface = this.folder.addFolder({ title: 'Matte micro surface', expanded: false })
     const ranges = {
