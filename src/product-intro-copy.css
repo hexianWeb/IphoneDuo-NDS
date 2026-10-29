@@ -113,9 +113,18 @@
   white-space: nowrap;
 }
 
-/* Hero 保持固定竖向视角；较窄画幅左展板会靠近边缘，只在足够宽的空区放置文案。 */
-@media (min-width: 1600px) and (min-height: 650px) and (min-aspect-ratio: 2 / 1) {
-  .product-intro-copy:not([hidden]) { display: block; }
+/* 原 2:1 条件排除了常规 16:9 桌面；仍保留窄屏和高窄画幅的防遮挡限制。 */
+@media (min-width: 1600px) and (min-height: 650px) and (min-aspect-ratio: 16 / 9) {
+  .product-intro-copy:not([hidden]) {
+    display: block;
+    /* 由 display:none 恢复时自然重播，不额外监听状态或用定时器制造首帧闪现。 */
+    animation: product-intro-copy-enter 650ms ease-in both;
+  }
+}
+
+@keyframes product-intro-copy-enter {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 /* 低矮宽屏压缩排版，三列文案仍完整显示并停在元件展台上方。 */
@@ -132,4 +141,27 @@
   .product-intro-copy__icon svg { width: 26px; height: 26px; }
   .product-intro-copy__feature-title { font-size: 12px; line-height: 18px; }
   .product-intro-copy__feature-description { font-size: 10.5px; line-height: 14px; }
+}
+
+/* 常规桌面没有超宽屏的左侧留白，收窄标题并纵排特点，不移动 3D 展区来迁就 DOM。 */
+@media (min-width: 1600px) and (min-height: 721px) and (max-aspect-ratio: 2 / 1) {
+  .product-intro-copy {
+    top: calc(var(--product-header-height, 48px) + env(safe-area-inset-top) + 20px);
+    width: 220px;
+  }
+  .product-intro-copy__eyebrow { margin-bottom: 10px; font-size: 12px; }
+  .product-intro-copy__title { margin-bottom: 14px; font-size: 34px; }
+  .product-intro-copy__description { font-size: 14px; }
+  .product-intro-copy__features { grid-template-columns: 1fr; margin-top: 14px; gap: 10px; }
+  .product-intro-copy__feature { display: grid; grid-template-columns: 34px 1fr; padding: 0; column-gap: 10px; }
+  .product-intro-copy__feature + .product-intro-copy__feature { padding: 0; }
+  .product-intro-copy__feature + .product-intro-copy__feature::before { display: none; }
+  .product-intro-copy__icon { grid-row: span 2; width: 34px; height: 34px; margin: 0; }
+  .product-intro-copy__icon svg { width: 20px; height: 20px; }
+  .product-intro-copy__feature-title { font-size: 12px; line-height: 18px; }
+  .product-intro-copy__feature-description { margin: 0; font-size: 10.5px; line-height: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-intro-copy:not([hidden]) { animation: none; }
 }

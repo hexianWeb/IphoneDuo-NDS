@@ -16,7 +16,8 @@ export function exhibitionFloorNodes(map, u) {
   const halo = float(1).sub(radial.smoothstep(0.1, 1.55)).mul(u.haloStrength).mul(top)
   const ringWidth = u.ringWidth.add(radial.fwidth())
   const ring = float(1).sub(radial.sub(1).abs().smoothstep(u.ringWidth, ringWidth)).mul(u.ringStrength).mul(top)
-  const base = u.tint.mul(mix(vec3(1), texture(map).rgb, 0.35))
+  // 降低颜色贴图对大面积弧墙白度的影响，表面触感仍由独立法线和粗糙度保留。
+  const base = u.tint.mul(mix(vec3(1), texture(map).rgb, u.colorMapStrength))
   const highlighted = mix(base, u.haloColor, halo)
   return {
     color: highlighted.mul(float(1).sub(grid)),

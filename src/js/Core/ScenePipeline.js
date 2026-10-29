@@ -12,9 +12,10 @@ export default class ScenePipeline {
     this.params = {
       enabled: true,
       view: 'scene',
-      radius: 0.15,
+      // 遮蔽集中在接触与缝隙附近，减少白色展台上的大面积灰晕。
+      radius: 0.10,
       thickness: 0.40,
-      strength: 1.5,
+      strength: 1.1,
       samples: 32,
       resolutionScale: 1,
       denoiseRadius: 3,

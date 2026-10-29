@@ -18,7 +18,8 @@ export default class Stage {
       depth: 20,
       wallRadius: 3,
       wallHeight: 16,
-      tint: '#e2e4e6',
+      tint: '#f0f1f2',
+      colorMapStrength: 0.12,
       // 沿用现有 PBR 贴图，减弱大尺度凹凸，让宽面光的柔和高光保留在半哑光地面上。
       roughness: 0.55,
       normalScale: 0.07,
@@ -42,7 +43,7 @@ export default class Stage {
       haloAxes: uniform(new THREE.Vector2()),
     }
     for (const key of ['tint', 'haloColor', 'ringColor']) this.uniforms[key] = uniform(new THREE.Color(this.params[key]))
-    for (const key of ['gridOpacity', 'gridSpacing', 'gridFade', 'haloStrength', 'ringStrength', 'ringWidth']) {
+    for (const key of ['colorMapStrength', 'gridOpacity', 'gridSpacing', 'gridFade', 'haloStrength', 'ringStrength', 'ringWidth']) {
       this.uniforms[key] = uniform(this.params[key])
     }
     const nodes = exhibitionFloorNodes(this.textures.color, this.uniforms)
@@ -108,7 +109,7 @@ export default class Stage {
     const p = this.params
     const u = this.uniforms
     for (const key of ['tint', 'haloColor', 'ringColor']) u[key].value.set(p[key])
-    for (const key of ['gridOpacity', 'gridSpacing', 'gridFade', 'haloStrength', 'ringStrength', 'ringWidth']) u[key].value = p[key]
+    for (const key of ['colorMapStrength', 'gridOpacity', 'gridSpacing', 'gridFade', 'haloStrength', 'ringStrength', 'ringWidth']) u[key].value = p[key]
     u.center.value.set(this.layout.centerX + p.haloOffsetX, this.layout.centerZ + p.haloOffsetZ)
     u.haloAxes.value.set(this.layout.width * p.haloScaleX, this.layout.depth * p.haloScaleZ)
     if (!this.layout.enabled) {
@@ -124,6 +125,8 @@ export default class Stage {
     this.folder.addBinding(this.params, 'visible', { label: 'Visible' })
       .on('change', ({ value }) => { this.mesh.visible = value })
     this.folder.addBinding(this.params, 'tint', { label: 'Floor color' }).on('change', () => this.applyUniforms())
+    this.folder.addBinding(this.params, 'colorMapStrength', { label: 'Color texture', min: 0, max: 1, step: 0.01 })
+      .on('change', () => this.applyUniforms())
     this.folder.addBinding(this.params, 'roughness', { min: 0.2, max: 1.5, step: 0.01 })
       .on('change', ({ value }) => { this.material.roughness = value })
     this.folder.addBinding(this.params, 'normalScale', { min: 0, max: 1, step: 0.01 })

@@ -15,8 +15,9 @@ export default class Environment {
     this.params = {
       background: '#f3f5f7',
       exposure: 1.03,
-      hemisphereIntensity: 1.9,
-      keyIntensity: 2.4,
+      // 收低无方向填光，由主光建立亮暗面，避免整体明度被抬平。
+      hemisphereIntensity: 0.6,
+      keyIntensity: 2.2,
       keyX: 2.9,
       keyY: 6,
       keyZ: 6.8,

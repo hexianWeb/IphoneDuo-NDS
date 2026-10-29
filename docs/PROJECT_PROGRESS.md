@@ -568,3 +568,24 @@ Phase 6 验收结论：
 - 最终 labels 两组新旧交错、1166→390→720→721→1166 布局、编译中 resize、销毁立即重建（八张标签纹理各 dispose 一次）、生产 preview 均通过，无捕获 JS/GPU 错误。材料仍在前述临时根目录：旧 `duo-startup-labels-p3MUtg/`、`duo-startup-labels-JbZXJU/`；新 `duo-startup-labels-JKOn35/`、`duo-startup-labels-4YIAqe/`；布局 `duo-startup-layout-Fga6zj/`、resize `duo-startup-resize-Z9uNzp/`、销毁 `duo-startup-destroy-4bVt9I/`、生产 `duo-startup-production-ErX9zc/`。早期开发模块取消失败另行留档，不计作成功或性能收益。
 - 生成说明加入 readme，PRD 第 29.4/29.5/29.9 节同步，细节见 `docs/LABEL_TEXTURE_OPTIMIZATION_2026-10-29.md`。没有新增依赖、提交或推送。
 - 最终生成/--check、build、`verify-labels --dist`、`verify-textures --dist`、按键/管线/NDS 映射、语法与 diff 检查通过；Needle 六个实际标签均为 IMG 且错误日志为空。最新原版/最终版像素对比 `duo-label-diff-feIY9O/` 再次确认五静态图、三预设及自定义 Dock 读回完全一致，整场六套截图平均通道差 0.016–0.026 / 255。
+
+## 28. 展台基础灯光强度调整（2026-10-29）
+
+- 按用户指定目标值，将 Environment 主光强度 2.4 → 1.5、副光 0.3 → 0.5、半球环境光 1.9 → 1.0；副光以明确数值为准上调。两盏柔光箱、底座灯带、曝光、灯色、灯位与阴影设置不变，PRD 第 29.1 节同步。
+- `npm run build`（105 modules）与 `git diff --check` 通过，构建仅有既有大 chunk 警告。Needle 实时读取确认当前页面主光 1.5、副光 0.5、半球光 1.0，柔光箱仍为 5 / 1.4；最终亮度与层次由用户视觉验收。本轮未提交或推送。
+
+## 29. 左上产品文案恢复与 ease-in 渐显（2026-10-29）
+
+- 实际 WebGPU 启动回归连续复现：1920×1080 下 Intro Ready / Game Home、文案 DOM 存在且 hidden=false，但计算样式为 display:none。只在浏览器中放宽旧 2:1 媒体查询即可恢复，确认不是 DOM 删除或状态事件丢失。
+- `product-intro-copy.css` 将显示宽高比下限放宽至 16:9，保留至少 1600×650 与高窄/小屏隐藏条件。16:9 至 2:1、视窗高度至少 721px 使用 220px 宽、34px 标题和纵向特点，减少与左侧展品重叠；原超宽屏与低矮宽屏样式保留。16:10 / 4:3 画幅仍因左侧留白不足隐藏，不移动 3D 展区或镜头。
+- 每次恢复可见播放 650ms CSS `ease-in`：透明度 0 → 1、向上回位 12px；重复同状态事件不重播，重播/加载/Playing 立即隐藏，减少动态效果偏好禁用动画。不新增 JS 监听、Timer 或时间线，前一轮灯光参数不变；PRD 第 23 节同步。
+- `verify-startup.mjs` 新增 `intro-copy` 模式，先在旧规则下断言失败，再通过最终规则的十种画幅、重播/跳过、加载取消、Playing 返回、同状态事件、动画起点/中点/终点和 reduced-motion 检查；中点透明度约 0.315，确认确实 ease-in 而非瞬间显示。截图前等待 Hero 镜头归位，避免把过渡帧当成布局结果。
+- 最终 WebGPU 回归、`npm run build`（105 modules）、脚本语法与 diff 检查通过，无捕获 JS / GPU 错误，构建仅有既有大 chunk 警告。原始失败材料 `duo-startup-intro-copy-UJE9fA/`、`duo-startup-intro-copy-ZXHYFI/`，最终材料 `duo-startup-intro-copy-WY0vR2/`（同前临时根目录）。最终版式与动效观感由用户验收；本轮未提交或推送。
+
+## 30. 灰蒙感改善：背景、主辅光与接触遮蔽（2026-10-29）
+
+- 按用户确认实施背景提纯与灯光层次调整：Stage 地面/弧墙底色 `#e2e4e6` → `#f0f1f2`，颜色贴图混合 0.35 → 0.12；新增 `colorMapStrength` uniform 与 `Stage / Cyclorama > Color texture` 调节项。法线、粗糙度和网格/Halo 沿用原设置。
+- Environment 主光 1.5 → 2.2、副光 0.5 → 0.3、半球光 1.0 → 0.6。曝光仍为 1.03，面光源、灯位、ACES、屏幕和 Lightmap 沿用原路线。
+- 独立 Chrome WebGPU 固定镜头对照旧参数、只改背景、背景+灯光、AO 强度归零及候选 AO。截图中背景提纯对大面积灰感改善最明显；采用 GTAO 半径 0.15 → 0.10、强度 1.5 → 1.1，收敛底座附近灰晕并保留接触层次。仍仅遮蔽间接光，32 样本、厚度、降噪和色彩转换路径不变。
+- 对照通过临时脚本复用现有 materials 验收，在独立页面切换旧/新参数，未向应用加入诊断入口。三套配色各有 Hero / Play 镜头对照（Play 为取景检查，未启动 ROM）；材料在 `C:\Users\f1686533\AppData\Local\Temp\opencode\duo-startup-materials-ebN2lc/`。
+- 最终源码的 `npm run build`（105 modules）、`git diff --check`、现有 `verify-startup.mjs ... materials` 通过，覆盖 Folded 首帧、三配色、完整重绘、Replay/Skip 和进入取消，无捕获 JS / GPU 错误。最终截图与报告在同临时根目录 `duo-startup-materials-Xl1Y56/`。最终亮度与层次由用户视觉验收；本轮未提交或推送。

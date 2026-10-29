@@ -7,10 +7,10 @@ import { fileURLToPath } from 'node:url'
 import { createServer, preview } from 'vite'
 
 // 独立服务/浏览器验收正式代码；只暴露实例和观测首帧，不改 shader 或管线准备逻辑。
-// node scripts/verify-startup.mjs <Chrome> <已有临时目录> [normal|materials|labels|layout|resize|destroy|production]
+// node scripts/verify-startup.mjs <Chrome> <已有临时目录> [normal|materials|labels|layout|intro-copy|resize|destroy|production]
 const [chromePath, tempRoot, mode = 'normal'] = process.argv.slice(2)
 assert.ok(chromePath && tempRoot, '需要 Chrome 路径及已有临时目录')
-assert.ok(['normal', 'materials', 'labels', 'layout', 'resize', 'destroy', 'production'].includes(mode))
+assert.ok(['normal', 'materials', 'labels', 'layout', 'intro-copy', 'resize', 'destroy', 'production'].includes(mode))
 const output = await mkdtemp(join(tempRoot, `duo-startup-${mode}-`))
 const projectRoot = fileURLToPath(new URL('../', import.meta.url))
 const production = mode === 'production'
@@ -147,6 +147,117 @@ async function screenshot(name) {
   const { data } = await send('Page.captureScreenshot', { format: 'png' })
   await writeFile(join(output, `${name}.png`), Buffer.from(data, 'base64'))
 }
+async function verifyIntroCopy() {
+  const desktop = await evaluate(`(() => {
+    const element = document.querySelector('.product-intro-copy'), style = getComputedStyle(element)
+    return { width:innerWidth, height:innerHeight, hidden:element.hidden, display:style.display,
+      opacity:style.opacity, intro:experience.state.introState, mode:experience.state.productMode }
+  })()`)
+  console.log('INTRO_COPY', JSON.stringify(desktop))
+  assert.equal(desktop.hidden, false, 'Ready / Game Home 产品文案不应被状态隐藏')
+  assert.notEqual(desktop.display, 'none', `常规桌面左上角产品文案不应消失：${JSON.stringify(desktop)}`)
+  const motion = await evaluate(`(() => {
+    const w = experience.world, element = w.introCopy.element, events = experience.events
+    const hidden = () => element.hidden && getComputedStyle(element).display === 'none'
+    const sampleEntry = (source) => {
+      const animation = element.getAnimations()[0]
+      if (!animation) return { source, missing:true }
+      const duration = animation.effect.getTiming().duration
+      animation.pause()
+      const sample = time => {
+        animation.currentTime = time
+        const style = getComputedStyle(element)
+        return { opacity:Number(style.opacity), offset:new DOMMatrixReadOnly(style.transform).m42 }
+      }
+      const result = { source, duration, easing:getComputedStyle(element).animationTimingFunction,
+        start:sample(0), middle:sample(duration / 2), end:sample(duration) }
+      events.emit('nds:state', { ...w.toolbar.nds, loading:false })
+      result.stable = element.getAnimations()[0] === animation && animation.currentTime === duration
+      animation.finish()
+      return result
+    }
+    w.intro.play()
+    const replayHidden = hidden()
+    w.intro.skip()
+    const replay = sampleEntry('replay-skip')
+    const nds = { ...w.toolbar.nds }
+    events.emit('nds:state', { ...nds, loading:true })
+    const loadingHidden = hidden()
+    events.emit('nds:state', { ...nds, loading:false })
+    const cancelled = sampleEntry('launch-cancelled')
+    w.setProductMode('playing')
+    const playingHidden = hidden()
+    w.setProductMode('game-home')
+    const returned = sampleEntry('return-home')
+    w.ndsPlayer.render()
+    return { replayHidden, loadingHidden, playingHidden, entries:[replay, cancelled, returned] }
+  })()`)
+  assert.ok(motion.replayHidden && motion.loadingHidden && motion.playingHidden, '重播、加载与 Playing 应隐藏文案')
+  for (const entry of motion.entries) {
+    assert.equal(entry.missing, undefined, `${entry.source} 必须播放渐显动画`)
+    assert.equal(entry.easing, 'ease-in')
+    assert.ok(entry.duration >= 400 && entry.duration <= 900)
+    assert.equal(entry.start.opacity, 0)
+    assert.ok(entry.start.offset > 0 && entry.start.offset <= 16)
+    assert.ok(entry.middle.opacity > 0 && entry.middle.opacity < 0.5, 'ease-in 中点应仍在渐显，而非瞬间出现')
+    assert.ok(entry.middle.offset > 0 && entry.middle.offset < entry.start.offset)
+    assert.equal(entry.end.opacity, 1)
+    assert.equal(entry.end.offset, 0)
+    assert.equal(entry.stable, true, '同一可见状态的重复事件不应重启动画')
+  }
+  await waitFor('experience.world.cameraDirector.timeline === null', '文案恢复后的 Hero 镜头归位')
+  const layouts = []
+  for (const size of [
+    { width:1920, height:1039, visible:true, name:'current-desktop', copyWidth:220, titleSize:'34px' },
+    { width:1920, height:1200, visible:false, name:'desktop-16-10' },
+    { width:1600, height:900, visible:true, name:'desktop-16-9', copyWidth:220, titleSize:'34px' },
+    { width:1920, height:855, visible:true, name:'ultrawide', copyWidth:330, titleSize:'51px' },
+    { width:1600, height:650, visible:true, name:'short-desktop', copyWidth:282, titleSize:'42px' },
+    { width:1599, height:900, visible:false, name:'narrow-desktop' },
+    { width:1600, height:649, visible:false, name:'too-short' },
+    { width:1600, height:1200, visible:false, name:'tall-desktop' },
+    { width:390, height:844, visible:false, name:'mobile' },
+    { width:1920, height:1080, visible:true, name:'desktop-restored' },
+  ]) {
+    await send('Emulation.setDeviceMetricsOverride', { width:size.width, height:size.height, deviceScaleFactor:1, mobile:false })
+    await waitFor(`experience.sizes.width === ${size.width} && innerHeight === ${size.height}`, size.name)
+    const layout = await evaluate(`(() => {
+      const element = document.querySelector('.product-intro-copy')
+      element.getAnimations().forEach(animation => animation.finish())
+      const style = getComputedStyle(element), rect = element.getBoundingClientRect()
+      return { display:style.display, opacity:Number(style.opacity), pointerEvents:style.pointerEvents,
+        copyWidth:rect.width, titleSize:getComputedStyle(element.querySelector('h1')).fontSize,
+        left:rect.left, top:rect.top, right:rect.right, bottom:rect.bottom,
+        headerBottom:document.querySelector('.product-header').getBoundingClientRect().bottom }
+    })()`)
+    layouts.push({ ...size, ...layout })
+    assert.equal(layout.display !== 'none', size.visible, `${size.name} 文案显示条件不符`)
+    if (size.visible) {
+      assert.equal(layout.opacity, 1)
+      assert.equal(layout.pointerEvents, 'none', '文案不能阻挡画布输入')
+      if (size.copyWidth) {
+        assert.equal(layout.copyWidth, size.copyWidth, `${size.name} 文案宽度不符`)
+        assert.equal(layout.titleSize, size.titleSize, `${size.name} 字号不符`)
+      }
+      assert.ok(layout.left >= 0 && layout.right <= size.width)
+      assert.ok(layout.top >= layout.headerBottom && layout.bottom < size.height)
+    }
+    if (['current-desktop', 'desktop-16-10', 'desktop-16-9', 'ultrawide', 'short-desktop', 'mobile'].includes(size.name))
+      await screenshot(`intro-copy-${size.name}`)
+  }
+  await send('Emulation.setEmulatedMedia', { features:[{ name:'prefers-reduced-motion', value:'reduce' }] })
+  const reducedMotion = await evaluate(`(() => {
+    const w = experience.world, element = w.introCopy.element
+    w.intro.play()
+    getComputedStyle(element).display
+    w.intro.skip()
+    const style = getComputedStyle(element)
+    return { display:style.display, opacity:style.opacity, animation:style.animationName, count:element.getAnimations().length }
+  })()`)
+  assert.deepEqual(reducedMotion, { display:'block', opacity:'1', animation:'none', count:0 })
+  await send('Emulation.setEmulatedMedia', { features:[] })
+  return { desktop, motion, layouts, reducedMotion }
+}
 try {
   let target
   for (let i = 0; i < 60; i++) {
@@ -280,6 +391,10 @@ try {
     await waitFor(`document.querySelector('.status-panel').hidden === true`, 'Loading 遮罩退出')
     await evaluate('experience.world.intro.skip()')
     await delay(1200)
+    if (mode === 'intro-copy') {
+      const introCopy = await verifyIntroCopy()
+      await evaluate(`__DUO_STARTUP__.introCopy = ${JSON.stringify(introCopy)}`)
+    }
     await evaluate('experience.performanceMonitor.samples.clear()')
     await delay(4000)
     await evaluate(`experience.renderer.instance.setAnimationLoop(null); experience.world.exhibition.update(0);
@@ -459,7 +574,7 @@ try {
   await delay(200)
   const report = await evaluate(`(() => {
     const p = __DUO_STARTUP__, e = p.Experience?.instance
-    return { completedAt:p.completedAt, firstFrames:p.firstFrames, gpuErrors:p.gpuErrors, redraw:p.redraw, cancelled:p.cancelled, buttonMaterials:p.buttonMaterials, layouts:p.layouts, labels:p.labels, labelRedraws:p.labelRedraws, initialLabelRedraws:p.initialLabelRedraws, labelValidation:p.labelValidation, labelDisposals:p.labelDisposals,
+    return { completedAt:p.completedAt, firstFrames:p.firstFrames, gpuErrors:p.gpuErrors, redraw:p.redraw, cancelled:p.cancelled, buttonMaterials:p.buttonMaterials, layouts:p.layouts, introCopy:p.introCopy, labels:p.labels, labelRedraws:p.labelRedraws, initialLabelRedraws:p.initialLabelRedraws, labelValidation:p.labelValidation, labelDisposals:p.labelDisposals,
       pipelines:p.pipelines, engine:document.querySelector('.webgl')?.dataset.engine,
       monitor:e ? {loadMs:e.performanceMonitor.loadMs, warmups:e.performanceMonitor.warmups,
         steady:JSON.parse(e.canvas.dataset.performance)} : null,
